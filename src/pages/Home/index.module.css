@@ -1,0 +1,57 @@
+/* .container {
+    margin: 0px;
+    padding: 0px;
+    width: 360px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.header{
+    width:280px;
+    padding: 20px 20px 0px 20px;
+}
+
+.logo{
+    height:60px;
+    width:60px;
+}
+
+.main{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width:280px;
+    padding: 20px 20px 20px 20px;
+}
+
+.line_wrapper{
+    width:280px;
+    margin: 12px 0px 12px 0px;
+    padding: 0px 0px 0px 0px;
+    display:inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+.line{
+    width: 126px;
+    display:inline-block;
+    border: none;
+    height: 1px;
+    background-color: #e6e5e5;
+    margin: auto
+}
+
+.terms{
+    width: 240px;
+    font-size: 10px;
+    line-height: 1.4;
+    padding-top: 10px;
+}
+ */
