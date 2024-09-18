@@ -104,35 +104,24 @@ const App = () => {
 	}, [openFiles, activeTab])
 
 	return (
-		<div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
+		<div className='bg-zinc-700 flex h-screen w-screen'>
 			<Sidebar onFileSelect={handleFileSelect} />
-			<div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-				<div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+			<div className='flex flex-1 flex-col'>
+				<div className='flex border-b border-gray-300'>
 					{openFiles.map((file, index) => (
 						<div
 							key={index}
 							onClick={() => setActiveTab(index)}
-							style={{
-								padding: '10px',
-								cursor: 'pointer',
-								backgroundColor: activeTab === index ? '#ddd' : '#f5f5f5',
-								borderBottom: activeTab === index ? '2px solid blue' : 'none',
-								position: 'relative',
-							}}
+							className={`p-2 cursor-pointer ${
+								activeTab === index
+									? 'bg-gray-100 border-b-2 border-red-500'
+									: 'bg-gray-300 '
+							} relative`}
 						>
 							{!file.isSaved ? (
-								<span
-									style={{
-										display: 'inline-block',
-										width: '8px',
-										height: '8px',
-										borderRadius: '50%',
-										backgroundColor: 'white',
-										marginRight: '4px',
-									}}
-								/>
+								<span className='inline-block w-2 h-2 rounded-full bg-white mr-1' />
 							) : (
-								<span style={{ display: 'inline-block', minWidth: '12px' }} />
+								<span className='inline-block min-w-[12px]' />
 							)}
 							<span>{file.name}</span>
 
@@ -141,7 +130,7 @@ const App = () => {
 									e.stopPropagation()
 									confirmCloseTab(index)
 								}}
-								style={{ marginLeft: '10px', cursor: 'pointer' }}
+								className='ml-2 cursor-pointer'
 							>
 								✖
 							</button>
