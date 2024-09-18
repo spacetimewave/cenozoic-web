@@ -6,6 +6,11 @@ import Login from '../pages/Login'
 
 export const Routes = [
 	{
+		path: '/',
+		element: <Login />,
+		errorElement: <Error />,
+	},
+	{
 		path: '/login',
 		element: <Login />,
 		errorElement: <Error />,
