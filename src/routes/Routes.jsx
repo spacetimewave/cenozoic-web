@@ -1,12 +1,12 @@
 import Error from '../pages/Error'
-import Home from '../pages/Home'
+import Editor from '../pages/Editor'
 import Layout from '../components/Layout'
 import ProtectedRoute from './ProtectedRoute'
 
 export const Routes = [
 	{
 		path: '/',
-		element: <Home />,
+		element: <Editor />,
 		errorElement: <Error />,
 	},
 	{
