@@ -1,16 +1,12 @@
 import MonacoEditor from 'react-monaco-editor'
 
-const CodeEditor = () => {
-	const handleChange = (newValue) => {
-		console.log('New value:', newValue)
-	}
-
+const CodeEditor = ({ value, onChange }) => {
 	return (
 		<MonacoEditor
 			language='javascript'
 			theme='vs-dark'
-			value=''
-			onChange={handleChange}
+			value={value}
+			onChange={onChange}
 			options={{
 				selectOnLineNumbers: true,
 				scrollBeyondLastLine: false,
