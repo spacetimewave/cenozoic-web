@@ -25,8 +25,8 @@ const Login = () => {
 			<div className='bg-white p-6 rounded-lg shadow-lg w-80 text-center'>
 				<h2 className='text-2xl mb-6'>Login</h2>
 				<form onSubmit={handleSubmit}>
-					<div className='mb-4'>
-						<label htmlFor='username' className='block mb-2'>
+					<div className='mb-4 text-left'>
+						<label htmlFor='username' className='block mb-1'>
 							Username
 						</label>
 						<input
@@ -38,8 +38,8 @@ const Login = () => {
 							className='w-full p-2 border border-gray-300 rounded'
 						/>
 					</div>
-					<div className='mb-4'>
-						<label htmlFor='password' className='block mb-2'>
+					<div className='mb-4 text-left'>
+						<label htmlFor='password' className='block mb-1'>
 							Password
 						</label>
 						<input
