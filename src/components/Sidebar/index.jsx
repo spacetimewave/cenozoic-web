@@ -3,14 +3,11 @@ import { selectFolder } from '../../services/fileSystemService'
 
 const Sidebar = ({ onFileSelect }) => {
 	const [files, setFiles] = useState([]) // To store folder contents
-	// const [folderName, setFolderName] = useState('') // To store the selected folder name
 	const [isParentOpen, setIsParentOpen] = useState(true) // To track if the parent folder is open
 
 	const handleSelectFolder = async () => {
 		const folderStructure = await selectFolder()
 		if (folderStructure) {
-			// setFolderName(folderStructure.projectFolder) // Store the selected folder name
-			// // Set initial isOpen state for each directory
 			setFiles(
 				folderStructure.map((file) => ({
 					...file,
@@ -51,15 +48,13 @@ const Sidebar = ({ onFileSelect }) => {
 				return (
 					<li key={index}>
 						<div
-							style={{ cursor: 'pointer' }}
+							className='cursor-pointer'
 							onClick={() => toggleFolder(currentPath, index)}
 						>
 							{item.isOpen ? '📂' : '📁'} {item.name}
 						</div>
 						{item.isOpen && item.children && (
-							<ul style={{ paddingLeft: '20px' }}>
-								{renderTree(item.children, currentPath)}
-							</ul>
+							<ul className='pl-5'>{renderTree(item.children, currentPath)}</ul>
 						)}
 					</li>
 				)
@@ -68,7 +63,7 @@ const Sidebar = ({ onFileSelect }) => {
 					<li
 						key={index}
 						onClick={() => onFileSelect(item.handle)}
-						style={{ cursor: 'pointer' }}
+						className='cursor-pointer'
 					>
 						📝 {item.name}
 					</li>
@@ -78,25 +73,19 @@ const Sidebar = ({ onFileSelect }) => {
 	}
 
 	return (
-		<div
-			style={{
-				width: '250px',
-				padding: '20px',
-				background: '#2d2d2d',
-				color: '#fff',
-				overflowY: 'auto',
-				height: '100vh',
-			}}
-		>
-			<button onClick={handleSelectFolder}>Select Folder</button>
+		<div className='w-64 p-5 bg-zinc-800 text-white overflow-y-auto h-screen'>
+			<button
+				onClick={handleSelectFolder}
+				className='bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mb-4'
+			>
+				Select Folder
+			</button>
 
 			{/* Collapsible Parent Folder */}
-			{
-				<div>
-					{/* Render the folder tree only if the parent is open */}
-					{isParentOpen && <ul>{renderTree(files)}</ul>}
-				</div>
-			}
+			<div>
+				{/* Render the folder tree only if the parent is open */}
+				{isParentOpen && <ul>{renderTree(files)}</ul>}
+			</div>
 		</div>
 	)
 }

@@ -114,7 +114,7 @@ const App = () => {
 							onClick={() => setActiveTab(index)}
 							className={`p-2 cursor-pointer ${
 								activeTab === index
-									? 'bg-gray-100 border-b-2 border-red-500'
+									? 'bg-gray-100 border-b-4 border-blue-600'
 									: 'bg-gray-300 '
 							} relative`}
 						>
