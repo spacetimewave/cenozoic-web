@@ -1,24 +1,51 @@
+// src/services/fileSystemService.js
+
+// Function to recursively get files and folders from the selected folder
 export const selectFolder = async () => {
-    // Check if File System Access API is supported
-    if ('showDirectoryPicker' in window) {
-      try {
-        // Request the user to select a folder
-        const directoryHandle = await window.showDirectoryPicker()
-        const files = []
-        
-        // Recursively read through the directory
-        for await (const entry of directoryHandle.values()) {
-          if (entry.kind === 'file') {
-            files.push(entry)
-          }
-        }
-        return files
-      } catch (error) {
-        console.error('Error selecting folder:', error)
-      }
-    } else {
-      alert('Your browser does not support the File System Access API.')
-      return []
-    }
-  }
-  
+	if ('showDirectoryPicker' in window) {
+		try {
+			const directoryHandle = await window.showDirectoryPicker()
+			return await readProjectDirectory(directoryHandle)
+		} catch (error) {
+			console.error('Error selecting folder:', error)
+		}
+	} else {
+		alert('Your browser does not support the File System Access API.')
+	}
+	return []
+}
+
+export const readProjectDirectory = async (directoryHandle) => {
+	const folderTree = []
+	folderTree.push({
+		name: directoryHandle.name,
+		kind: 'directory',
+		children: await readDirectory(directoryHandle),
+	})
+	console.log(folderTree)
+	return folderTree
+}
+
+// Recursively read directories
+const readDirectory = async (directoryHandle) => {
+	const folderTree = []
+	for await (const entry of directoryHandle.values()) {
+		const { kind, name } = entry
+
+		if (kind === 'directory') {
+			// Recursively read sub-directories
+			folderTree.push({
+				name,
+				kind,
+				children: await readDirectory(entry),
+			})
+		} else {
+			folderTree.push({
+				name,
+				kind,
+				handle: entry,
+			})
+		}
+	}
+	return folderTree
+}

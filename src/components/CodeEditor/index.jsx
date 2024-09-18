@@ -9,7 +9,7 @@ const CodeEditor = () => {
 		<MonacoEditor
 			language='javascript'
 			theme='vs-dark'
-			value='// Your code here...'
+			value=''
 			onChange={handleChange}
 			options={{
 				selectOnLineNumbers: true,

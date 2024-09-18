@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import CodeEditor from '../CodeEditor'
-import Sidebar from '../Sidebar'
+import CodeEditor from '../../components/CodeEditor'
+import Sidebar from '../../components/Sidebar'
 
 const App = () => {
 	const [code, setCode] = useState('// Select a file to open...')
