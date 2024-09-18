@@ -6,7 +6,6 @@ import useCredentialStore from '../state'
 function ProtectedRoute({ children }) {
 	useSignals()
 	const { username, password } = useCredentialStore()
-	console.log('ProtectedRoute', username, password)
 	if (!username && !password) {
 		return <Navigate to='/' replace />
 	}
