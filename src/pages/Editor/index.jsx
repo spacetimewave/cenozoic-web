@@ -119,7 +119,7 @@ const App = () => {
 							} relative`}
 						>
 							{!file.isSaved ? (
-								<span className='inline-block w-2 h-2 rounded-full bg-white mr-1' />
+								<span className='inline-block w-2 h-2 rounded-full bg-blue-500 mr-1' />
 							) : (
 								<span className='inline-block min-w-[12px]' />
 							)}
