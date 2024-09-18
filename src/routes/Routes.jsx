@@ -2,11 +2,12 @@ import Error from '../pages/Error'
 import Editor from '../pages/Editor'
 import Layout from '../components/Layout'
 import ProtectedRoute from './ProtectedRoute'
+import Login from '../pages/Login'
 
 export const Routes = [
 	{
-		path: '/',
-		element: <Editor />,
+		path: '/login',
+		element: <Login />,
 		errorElement: <Error />,
 	},
 	{
@@ -17,6 +18,11 @@ export const Routes = [
 			</ProtectedRoute>
 		),
 		errorElement: <Error />,
-		children: [],
+		children: [
+			{
+				path: '/editor',
+				element: <Editor />,
+			},
+		],
 	},
 ]
