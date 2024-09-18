@@ -1,7 +1,4 @@
-// src/services/fileSystemService.js
-
-// Function to recursively get files and folders from the selected folder
-export const selectFolder = async () => {
+export const selectProjectFolder = async () => {
 	if ('showDirectoryPicker' in window) {
 		try {
 			const directoryHandle = await window.showDirectoryPicker()
@@ -20,6 +17,7 @@ export const readProjectDirectory = async (directoryHandle) => {
 	folderTree.push({
 		name: directoryHandle.name,
 		kind: 'directory',
+		handle: directoryHandle,
 		children: await readDirectory(directoryHandle),
 	})
 	console.log(folderTree)
@@ -37,6 +35,7 @@ const readDirectory = async (directoryHandle) => {
 			folderTree.push({
 				name,
 				kind,
+				handle: entry,
 				children: await readDirectory(entry),
 			})
 		} else {
@@ -48,4 +47,19 @@ const readDirectory = async (directoryHandle) => {
 		}
 	}
 	return folderTree
+}
+
+export const deleteDirectory = async (directoryHandle) => {
+	// Recursively delete all contents of the directory
+	for await (const entry of directoryHandle.values()) {
+		if (entry.kind === 'directory') {
+			// Recursively delete sub-directory contents
+			await deleteDirectory(entry)
+		} else {
+			// Delete the file
+			await entry.remove()
+		}
+	}
+	// Delete the directory itself
+	await directoryHandle.remove()
 }

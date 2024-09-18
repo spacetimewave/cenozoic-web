@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { selectFolder } from '../../services/fileSystemService'
+import { selectProjectFolder } from '../../services/fileSystemService'
 import { useNavigate } from 'react-router-dom'
 import useCredentialStore from '../../state'
 
 const Sidebar = ({ onFileSelect }) => {
 	const [files, setFiles] = useState([]) // To store folder contents
 	const [isParentOpen, setIsParentOpen] = useState(true) // To track if the parent folder is open
+	const [contextMenu, setContextMenu] = useState(null) // Context menu state
+	const [selectedFolder, setSelectedFolder] = useState(null) // To store the selected folder
 	const navigate = useNavigate()
 	const { username, setUsername, setPassword } = useCredentialStore()
 
 	const handleSelectFolder = async () => {
-		const folderStructure = await selectFolder()
+		const folderStructure = await selectProjectFolder()
 		if (folderStructure) {
 			setFiles(
 				folderStructure.map((file) => ({
@@ -50,6 +52,29 @@ const Sidebar = ({ onFileSelect }) => {
 		setFiles(toggle(updatedFiles, path, 0))
 	}
 
+	const handleContextMenu = (e, folder) => {
+		e.preventDefault()
+		setContextMenu({
+			top: e.clientY,
+			left: e.clientX,
+		})
+		setSelectedFolder(folder)
+	}
+
+	const handleMenuAction = (action) => {
+		if (action === 'add-folder') {
+			// Implement add folder logic here
+			console.log('Add folder to', selectedFolder)
+		} else if (action === 'add-file') {
+			// Implement add file logic here
+			console.log('Add file to', selectedFolder)
+		} else if (action === 'delete') {
+			// Implement delete logic here
+			console.log('Delete', selectedFolder)
+		}
+		setContextMenu(null)
+	}
+
 	const renderTree = (items, path = []) => {
 		return items.map((item, index) => {
 			const currentPath = [...path, index] // Create a unique path for each item
@@ -60,6 +85,7 @@ const Sidebar = ({ onFileSelect }) => {
 						<div
 							className='cursor-pointer'
 							onClick={() => toggleFolder(currentPath, index)}
+							onContextMenu={(e) => handleContextMenu(e, item)}
 						>
 							{item.isOpen ? '📂' : '📁'} {item.name}
 						</div>
@@ -83,17 +109,16 @@ const Sidebar = ({ onFileSelect }) => {
 	}
 
 	return (
-		<div className='w-64 p-5 bg-zinc-800 text-white overflow-y-auto h-screen'>
+		<div className='w-64 p-5 bg-zinc-800 text-white overflow-y-auto h-screen relative'>
 			<div className='flex items-center mb-6'>
 				<span
 					className='w-10 h-10 rounded-full mr-3 bg-slate-500'
 					alt='profile'
 				></span>
 				<div>
-					<h2 className='font-semibold text-lg'>{username}</h2>{' '}
-					{/* Replace with the actual name */}
+					<h2 className='font-semibold text-lg'>{username}</h2>
 					<button
-						onClick={handleSignOut} // Define this function for signing out
+						onClick={handleSignOut}
 						className='text-sm text-blue-400 hover:underline'
 					>
 						Sign Out
@@ -101,7 +126,6 @@ const Sidebar = ({ onFileSelect }) => {
 				</div>
 			</div>
 
-			{/* Folder Section */}
 			<button
 				onClick={handleSelectFolder}
 				className='bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mb-4'
@@ -109,11 +133,45 @@ const Sidebar = ({ onFileSelect }) => {
 				Select Folder
 			</button>
 
-			{/* Collapsible Parent Folder */}
-			<div>
-				{/* Render the folder tree only if the parent is open */}
-				{isParentOpen && <ul>{renderTree(files)}</ul>}
-			</div>
+			<div>{isParentOpen && <ul>{renderTree(files)}</ul>}</div>
+
+			{contextMenu && (
+				<div
+					className='absolute bg-white text-black border border-gray-300 rounded shadow-lg z-50'
+					style={{
+						top: contextMenu.top,
+						left: contextMenu.left,
+						width: '150px',
+					}}
+				>
+					<ul className='list-none m-0 p-0'>
+						<li>
+							<button
+								onClick={() => handleMenuAction('add-folder')}
+								className='w-full text-left px-4 py-2 hover:bg-gray-100'
+							>
+								Add Folder
+							</button>
+						</li>
+						<li>
+							<button
+								onClick={() => handleMenuAction('add-file')}
+								className='w-full text-left px-4 py-2 hover:bg-gray-100'
+							>
+								Add File
+							</button>
+						</li>
+						<li>
+							<button
+								onClick={() => handleMenuAction('delete')}
+								className='w-full text-left px-4 py-2 hover:bg-gray-100'
+							>
+								Delete
+							</button>
+						</li>
+					</ul>
+				</div>
+			)}
 		</div>
 	)
 }

@@ -2,16 +2,12 @@ import { useState, useEffect } from 'react'
 import CodeEditor from '../../components/CodeEditor'
 import Sidebar from '../../components/Sidebar'
 import SaveModal from '../../components/Modal'
-import useCredentialStore from '../../state'
 
 const App = () => {
 	const [openFiles, setOpenFiles] = useState([])
 	const [activeTab, setActiveTab] = useState(0)
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
 	const [closingTabIndex, setClosingTabIndex] = useState(null)
-
-	const { username, password } = useCredentialStore()
-	console.log(username, password)
 
 	const handleFileSelect = async (fileHandle) => {
 		const file = await fileHandle.getFile()
