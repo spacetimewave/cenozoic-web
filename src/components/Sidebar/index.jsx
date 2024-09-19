@@ -3,7 +3,7 @@ import { selectProjectFolder } from '../../services/fileSystemService'
 import { useNavigate } from 'react-router-dom'
 import useCredentialStore from '../../state'
 
-const Sidebar = ({ onFileSelect }) => {
+const Sidebar = ({ onFileSelected }) => {
 	const [files, setFiles] = useState([]) // To store folder contents
 	const [isParentOpen, setIsParentOpen] = useState(true) // To track if the parent folder is open
 	const [contextMenu, setContextMenu] = useState(null) // Context menu state
@@ -98,7 +98,7 @@ const Sidebar = ({ onFileSelect }) => {
 				return (
 					<li
 						key={index}
-						onClick={() => onFileSelect(item.handle)}
+						onClick={() => onFileSelected(item.handle)}
 						className='cursor-pointer'
 					>
 						📝 {item.name}
