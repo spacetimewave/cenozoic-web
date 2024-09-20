@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../../components/CodeEditor'
 import SaveModal from '../../components/Modal'
+import { useFileSystemStore } from '../../services/FileSystemService'
 
 const FileManager = ({ selectedFile }) => {
-	const [openFiles, setOpenFiles] = useState([])
-	const [activeTab, setActiveTab] = useState(0)
+	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
+		useFileSystemStore()
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
 	const [closingTabIndex, setClosingTabIndex] = useState(null)
 
@@ -19,44 +20,54 @@ const FileManager = ({ selectedFile }) => {
 		const fileContent = await file.text()
 		const fileName = file.name
 
-		const existingFileIndex = openFiles.findIndex((f) => f.name === fileName)
+		const existingFileIndex = openedFiles.findIndex((f) => f.name === fileName)
 
 		if (existingFileIndex !== -1) {
-			setActiveTab(existingFileIndex)
+			setActiveFile(openedFiles[existingFileIndex])
 		} else {
-			setOpenFiles((prevFiles) => [
-				...prevFiles,
-				{
-					name: fileName,
-					content: fileContent,
-					isSaved: true,
-					handle: fileHandle,
-				},
-			])
-			setActiveTab(openFiles.length)
+			const newFile = {
+				name: fileName,
+				content: fileContent,
+				isSaved: true,
+				handle: fileHandle,
+			}
+			setOpenedFiles((prevFiles) => [...prevFiles, newFile])
+			setActiveFile(newFile) // Set the newly added file as active
 		}
 	}
 
 	const handleCodeChange = (newValue) => {
-		const updatedFiles = [...openFiles]
-		updatedFiles[activeTab].content = newValue
-		updatedFiles[activeTab].isSaved = false
-		setOpenFiles(updatedFiles)
+		const updatedActiveFile = {
+			...activeFile,
+			content: newValue,
+			isSaved: false,
+		}
+		setActiveFile(updatedActiveFile)
+
+		const updatedFiles = openedFiles.map((file) =>
+			file.name === activeFile.name ? updatedActiveFile : file,
+		)
+		setOpenedFiles(updatedFiles)
 	}
 
 	const handleSave = async () => {
-		const file = openFiles[activeTab]
-		const writable = await file.handle.createWritable()
-		await writable.write(file.content)
+		if (!activeFile) return
+
+		const writable = await activeFile.handle.createWritable()
+		await writable.write(activeFile.content)
 		await writable.close()
 
-		const updatedFiles = [...openFiles]
-		updatedFiles[activeTab].isSaved = true
-		setOpenFiles(updatedFiles)
+		const updatedActiveFile = { ...activeFile, isSaved: true }
+		setActiveFile(updatedActiveFile)
+
+		const updatedFiles = openedFiles.map((file) =>
+			file.name === activeFile.name ? updatedActiveFile : file,
+		)
+		setOpenedFiles(updatedFiles)
 	}
 
 	const confirmCloseTab = (index) => {
-		if (!openFiles[index].isSaved) {
+		if (!openedFiles[index].isSaved) {
 			setClosingTabIndex(index)
 			setIsSaveModalOpen(true)
 		} else {
@@ -65,19 +76,20 @@ const FileManager = ({ selectedFile }) => {
 	}
 
 	const handleCloseTab = (index) => {
-		const updatedFiles = openFiles.filter((_, i) => i !== index)
-		setOpenFiles(updatedFiles)
-		if (index === activeTab && updatedFiles.length > 0) {
-			setActiveTab(Math.min(activeTab, updatedFiles.length - 1))
+		const updatedFiles = openedFiles.filter((_, i) => i !== index)
+		setOpenedFiles(updatedFiles)
+
+		if (openedFiles[index] === activeFile && updatedFiles.length > 0) {
+			setActiveFile(updatedFiles[Math.min(index, updatedFiles.length - 1)])
 		} else if (updatedFiles.length === 0) {
-			setActiveTab(0)
+			setActiveFile(null)
 		}
 		setIsSaveModalOpen(false)
 	}
 
-	const handleModalSave = () => {
-		handleSave()
-		handleCloseTab(closingTabIndex)
+	const handleModalSave = async () => {
+		await handleSave() // Wait for the save to complete
+		handleCloseTab(closingTabIndex) // Close the tab without reopening
 	}
 
 	const handleModalDiscard = () => {
@@ -99,17 +111,17 @@ const FileManager = ({ selectedFile }) => {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [openFiles, activeTab])
+	}, [openedFiles, activeFile])
 
 	return (
 		<div className='flex flex-1 flex-col'>
 			<div className='flex border-b border-gray-300'>
-				{openFiles.map((file, index) => (
+				{openedFiles.map((file, index) => (
 					<div
 						key={index}
-						onClick={() => setActiveTab(index)}
+						onClick={() => setActiveFile(file)}
 						className={`p-2 cursor-pointer ${
-							activeTab === index
+							activeFile === file
 								? 'bg-gray-100 border-b-4 border-blue-600'
 								: 'bg-gray-300'
 						} relative`}
@@ -133,16 +145,16 @@ const FileManager = ({ selectedFile }) => {
 					</div>
 				))}
 			</div>
-			{openFiles.length > 0 && (
+			{openedFiles.length > 0 && activeFile && (
 				<CodeEditor
-					value={openFiles[activeTab].content ?? ''}
+					value={activeFile?.content ?? ''}
 					onChange={handleCodeChange}
 				/>
 			)}
 
 			{isSaveModalOpen && (
 				<SaveModal
-					fileName={openFiles[closingTabIndex].name}
+					fileName={openedFiles[closingTabIndex]?.name}
 					onSave={handleModalSave}
 					onDiscard={handleModalDiscard}
 					onCancel={handleModalCancel}

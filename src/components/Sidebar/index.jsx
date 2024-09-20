@@ -1,55 +1,32 @@
 import { useState } from 'react'
-import { selectProjectFolder } from '../../services/fileSystemService'
 import { useNavigate } from 'react-router-dom'
 import useCredentialStore from '../../state'
+import {
+	SelectProjectFolder,
+	useFileSystemStore,
+	toggleFolder,
+	openFile,
+	getChildren,
+} from '../../services/FileSystemService'
 
-const Sidebar = ({ onFileSelected }) => {
-	const [files, setFiles] = useState([]) // To store folder contents
-	const [isParentOpen, setIsParentOpen] = useState(true) // To track if the parent folder is open
-	const [contextMenu, setContextMenu] = useState(null) // Context menu state
-	const [selectedFolder, setSelectedFolder] = useState(null) // To store the selected folder
+const Sidebar = () => {
 	const navigate = useNavigate()
 	const { username, setUsername, setPassword } = useCredentialStore()
+	const { projectFiles } = useFileSystemStore()
+
+	const [contextMenu, setContextMenu] = useState(null) // Context menu state (Add file, delete folder, add folder menu)
+	const [selectedFolder, setSelectedFolder] = useState(null) // To store the selected folder
+
+	useState(() => {}, projectFiles)
 
 	const handleSelectFolder = async () => {
-		const folderStructure = await selectProjectFolder()
-		if (folderStructure) {
-			setFiles(
-				folderStructure.map((file) => ({
-					...file,
-					isOpen: false, // Add isOpen flag to each directory
-				})),
-			)
-			setIsParentOpen(true) // When selecting a new folder, make it open by default
-		}
+		await SelectProjectFolder()
 	}
 
 	const handleSignOut = async () => {
 		setUsername(null)
 		setPassword(null)
 		navigate('/login')
-	}
-
-	const toggleFolder = (path, index) => {
-		// Recursively toggle the folder's isOpen state in a new structure
-		const updatedFiles = [...files]
-
-		const toggle = (items, path, depth) => {
-			if (depth === path.length - 1) {
-				items[path[depth]].isOpen = !items[path[depth]].isOpen
-				return items
-			}
-			if (items[path[depth]].children) {
-				items[path[depth]].children = toggle(
-					items[path[depth]].children,
-					path,
-					depth + 1,
-				)
-			}
-			return items
-		}
-
-		setFiles(toggle(updatedFiles, path, 0))
 	}
 
 	const handleContextMenu = (e, folder) => {
@@ -63,49 +40,49 @@ const Sidebar = ({ onFileSelected }) => {
 
 	const handleMenuAction = (action) => {
 		if (action === 'add-folder') {
-			// Implement add folder logic here
 			console.log('Add folder to', selectedFolder)
 		} else if (action === 'add-file') {
-			// Implement add file logic here
 			console.log('Add file to', selectedFolder)
 		} else if (action === 'delete') {
-			// Implement delete logic here
 			console.log('Delete', selectedFolder)
 		}
 		setContextMenu(null)
 	}
 
-	const renderTree = (items, path = []) => {
-		return items.map((item, index) => {
-			const currentPath = [...path, index] // Create a unique path for each item
+	const renderTree = (parentPath = null) => {
+		// Get the files and directories that are children of the given parentPath
 
-			if (item.kind === 'directory') {
-				return (
-					<li key={index}>
-						<div
-							className='cursor-pointer'
-							onClick={() => toggleFolder(currentPath, index)}
-							onContextMenu={(e) => handleContextMenu(e, item)}
-						>
-							{item.isOpen ? '📂' : '📁'} {item.name}
-						</div>
-						{item.isOpen && item.children && (
-							<ul className='pl-5'>{renderTree(item.children, currentPath)}</ul>
-						)}
-					</li>
-				)
-			} else {
-				return (
-					<li
-						key={index}
-						onClick={() => onFileSelected(item.handle)}
-						className='cursor-pointer'
-					>
-						📝 {item.name}
-					</li>
-				)
-			}
-		})
+		const items = getChildren(parentPath)
+		return (
+			<ul className={parentPath === null ? '' : 'pl-2'}>
+				{items?.map((item, index) => {
+					if (item.kind === 'directory') {
+						return (
+							<li key={index}>
+								<div
+									className='cursor-pointer'
+									onClick={() => toggleFolder(item.path)}
+									onContextMenu={(e) => handleContextMenu(e, item)}
+								>
+									{item.isOpen ? '📂' : '📁'} {item.name}
+								</div>
+								{item.isOpen && renderTree(item.path)}
+							</li>
+						)
+					} else {
+						return (
+							<li
+								key={index}
+								onClick={() => openFile(item.handle)}
+								className='cursor-pointer'
+							>
+								📝 {item.name}
+							</li>
+						)
+					}
+				})}
+			</ul>
+		)
 	}
 
 	return (
@@ -133,7 +110,7 @@ const Sidebar = ({ onFileSelected }) => {
 				Select Folder
 			</button>
 
-			<div>{isParentOpen && <ul>{renderTree(files)}</ul>}</div>
+			<div>{renderTree()}</div>
 
 			{contextMenu && (
 				<div

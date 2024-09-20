@@ -1,65 +1,133 @@
-export const selectProjectFolder = async () => {
+import { create } from 'zustand'
+
+export const useFileSystemStore = create((set) => ({
+	openedFiles: [], // list of opened files (flat)
+	activeFile: null, // active file (focus)
+	projectFiles: [], // flat list of project files and directories
+	setOpenedFiles: (files) => set({ openedFiles: files }),
+	setActiveFile: (file) => set({ activeFile: file }),
+	setProjectFiles: (files) => set({ projectFiles: files }),
+}))
+
+export const openFile = async (fileHandle) => {
+	const { openedFiles, setOpenedFiles, setActiveFile } =
+		useFileSystemStore.getState()
+
+	// Check if the file is already open
+	const fileExists = openedFiles?.find((file) => file.handle === fileHandle)
+
+	console.log(fileExists)
+	console.log(fileHandle)
+	if (!fileExists) {
+		const file = await fileHandle.getFile()
+		const newFile = {
+			handle: fileHandle,
+			name: file.name,
+			content: await file.text(),
+			isSaved: true,
+		}
+
+		setOpenedFiles([...openedFiles, newFile]) // Push the new file
+		setActiveFile(newFile)
+	} else {
+		setActiveFile(fileExists)
+	}
+}
+
+export const closeFile = (fileIndex) => {
+	const { openedFiles, setOpenedFiles } = useFileSystemStore.getState()
+	setOpenedFiles(openedFiles.filter((_, index) => index !== fileIndex))
+}
+
+export const SelectProjectFolder = async () => {
+	const { setProjectFiles } = useFileSystemStore.getState()
+
 	if ('showDirectoryPicker' in window) {
 		try {
-			const directoryHandle = await window.showDirectoryPicker()
-			return await readProjectDirectory(directoryHandle)
+			const rootDirectoryHandle = await window.showDirectoryPicker()
+			const flatFileStructure = await ReadRootDirectory(rootDirectoryHandle)
+			setProjectFiles(flatFileStructure)
 		} catch (error) {
 			console.error('Error selecting folder:', error)
 		}
 	} else {
 		alert('Your browser does not support the File System Access API.')
 	}
+
 	return []
 }
 
-export const readProjectDirectory = async (directoryHandle) => {
-	const folderTree = []
-	folderTree.push({
+export const ReadRootDirectory = async (directoryHandle) => {
+	const rootDirectory = {
+		path: '/' + directoryHandle.name,
 		name: directoryHandle.name,
 		kind: 'directory',
 		handle: directoryHandle,
-		children: await readDirectory(directoryHandle),
-	})
-	console.log(folderTree)
-	return folderTree
-}
-
-// Recursively read directories
-const readDirectory = async (directoryHandle) => {
-	const folderTree = []
-	for await (const entry of directoryHandle.values()) {
-		const { kind, name } = entry
-
-		if (kind === 'directory') {
-			// Recursively read sub-directories
-			folderTree.push({
-				name,
-				kind,
-				handle: entry,
-				children: await readDirectory(entry),
-			})
-		} else {
-			folderTree.push({
-				name,
-				kind,
-				handle: entry,
-			})
-		}
+		isOpen: false,
+		parentPath: null, // Root has no parent
 	}
-	return folderTree
+
+	// Read the directory and flatten the structure
+	const flatStructure = [rootDirectory]
+	await ReadDirectory(rootDirectory, flatStructure)
+	return flatStructure
 }
 
-export const deleteDirectory = async (directoryHandle) => {
-	// Recursively delete all contents of the directory
-	for await (const entry of directoryHandle.values()) {
+// Recursively read directories and flatten into a single array
+const ReadDirectory = async (parentDirectory, flatStructure) => {
+	for await (const entry of parentDirectory.handle.values()) {
+		const fullPath = parentDirectory.path + '/' + entry.name
 		if (entry.kind === 'directory') {
-			// Recursively delete sub-directory contents
-			await deleteDirectory(entry)
+			const directory = {
+				path: fullPath,
+				name: entry.name,
+				kind: entry.kind,
+				handle: entry,
+				isOpen: false,
+				parentPath: parentDirectory.path,
+			}
+			flatStructure.push(directory)
+			await ReadDirectory(directory, flatStructure) // Recursive read for directories
 		} else {
-			// Delete the file
-			await entry.remove()
+			const file = {
+				path: fullPath,
+				name: entry.name,
+				kind: entry.kind,
+				handle: entry,
+				parentPath: parentDirectory.path, // Reference to parent
+			}
+			flatStructure.push(file)
 		}
 	}
-	// Delete the directory itself
-	await directoryHandle.remove()
+}
+
+export const toggleFolder = (path) => {
+	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
+	// Toggle the folder state
+	const updatedFiles = projectFiles.map((file) => {
+		if (file.path === path && file.kind === 'directory') {
+			return { ...file, isOpen: !file.isOpen }
+		}
+		return file
+	})
+	setProjectFiles(updatedFiles)
+}
+
+// Function to get children of a directory (since it's now flat)
+export const getChildren = (parentPath) => {
+	const { projectFiles } = useFileSystemStore.getState()
+	return projectFiles.filter((file) => file.parentPath === parentPath)
+}
+
+// Additional helper function to open or close all children of a directory
+export const toggleFolderRecursively = (path, isOpen) => {
+	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
+	// Find the target folder and its children
+	const updatedFiles = projectFiles.map((file) => {
+		if (file.path.startsWith(path)) {
+			return { ...file, isOpen }
+		}
+		return file
+	})
+	setProjectFiles(updatedFiles)
 }
