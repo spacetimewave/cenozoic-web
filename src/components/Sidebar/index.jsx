@@ -72,7 +72,6 @@ const Sidebar = () => {
 
 	const handleNewItemBlur = async () => {
 		if (newItemName && addingToPath) {
-			console.log(addingToPath)
 			if (newItemType === 'file') {
 				await createFile(addingToPath, newItemName)
 			} else if (newItemType === 'directory') {

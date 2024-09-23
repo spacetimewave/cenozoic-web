@@ -28,8 +28,6 @@ export const openFile = async (openFile) => {
 			isSaved: true,
 		}
 
-		console.log(file)
-
 		setOpenedFiles([...openedFiles, newFile]) // Push the new file
 		setActiveFile(newFile)
 	} else {
@@ -356,15 +354,13 @@ export const renameItem = async (oldPath, newName) => {
 			} else if (entryToRename.kind === 'directory') {
 				// For directories, create a new directory with the new name
 				const parentDirHandle = getParent(entryToRename.parentPath)
-				console.log(parentDirHandle)
+
 				const newDirHandle = await parentDirHandle.handle.getDirectoryHandle(
 					newName,
 					{
 						create: true,
 					},
 				)
-
-				console.log(newDirHandle)
 
 				// Move contents from the old directory to the new one
 				await moveFolderContents(entryToRename.handle, newDirHandle)
@@ -431,7 +427,6 @@ export const createFile = async (parentFolderPath, newFileName) => {
 export const RefressProjectFiles = async () => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 	const rootDirectory = projectFiles.find((i) => i.parentPath === null)
-	console.log(rootDirectory)
 	const flatFileStructure = await ReadRootDirectory(rootDirectory.handle)
 	setProjectFiles(flatFileStructure)
 }
