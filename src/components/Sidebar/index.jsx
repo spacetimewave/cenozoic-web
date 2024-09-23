@@ -24,6 +24,7 @@ const Sidebar = () => {
 	const [renamingItem, setRenamingItem] = useState(null)
 	const [renameInput, setRenameInput] = useState('')
 	const [newItemName, setNewItemName] = useState('') // State for new item name
+	const [newItemType, setNewItemType] = useState(null) // State for new item name
 	const [addingToPath, setAddingToPath] = useState(null) // State to track where to add a new item
 
 	useState(() => {}, projectFiles)
@@ -50,9 +51,11 @@ const Sidebar = () => {
 	const handleMenuAction = (action) => {
 		if (action === 'add-folder') {
 			setNewItemName('') // Reset new item name
+			setNewItemType('directory')
 			setAddingToPath(selectedItem.path) // Set the path to add the new item
 		} else if (action === 'add-file') {
-			setNewItemName('new.txt') // Default name for new file
+			setNewItemName('file.txt') // Default name for new file
+			setNewItemType('file')
 			setAddingToPath(selectedItem.path) // Set the path to add the new item
 		} else if (action === 'delete-folder') {
 			deleteFolder(selectedItem.path)
@@ -68,12 +71,13 @@ const Sidebar = () => {
 	const handleNewItemBlur = async () => {
 		if (newItemName && addingToPath) {
 			console.log(addingToPath)
-			if (newItemName.endsWith('.txt')) {
+			if (newItemType === 'file') {
 				await createFile(addingToPath, newItemName)
-			} else {
+			} else if (newItemType === 'directory') {
 				await createFolder(addingToPath, newItemName)
 			}
 			setNewItemName('') // Clear input after creation
+			setNewItemType(null)
 			setAddingToPath(null) // Reset adding path
 		}
 	}
