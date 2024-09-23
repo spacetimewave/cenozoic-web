@@ -12,6 +12,7 @@ import {
 	renameItem,
 	createFolder,
 	createFile,
+	moveItem, // Add this service to handle moving items
 } from '../../services/FileSystemService'
 
 const Sidebar = () => {
@@ -26,6 +27,7 @@ const Sidebar = () => {
 	const [newItemName, setNewItemName] = useState('') // State for new item name
 	const [newItemType, setNewItemType] = useState(null) // State for new item name
 	const [addingToPath, setAddingToPath] = useState(null) // State to track where to add a new item
+	const [draggedItem, setDraggedItem] = useState(null) // Track the dragged item
 
 	useState(() => {}, projectFiles)
 
@@ -89,6 +91,24 @@ const Sidebar = () => {
 		}
 	}
 
+	// Drag-and-drop handlers
+	const handleDragStart = (e, item) => {
+		setDraggedItem(item) // Store the dragged item
+	}
+
+	const handleDragOver = (e) => {
+		e.preventDefault() // Allow dropping
+	}
+
+	const handleDrop = async (e, targetFolder) => {
+		e.preventDefault()
+		e.stopPropagation()
+		if (draggedItem && draggedItem.path !== targetFolder.path) {
+			await moveItem(draggedItem.path, targetFolder.path) // Move the dragged item
+			setDraggedItem(null) // Clear dragged item
+		}
+	}
+
 	const renderTree = (parentPath = null) => {
 		const items = getChildren(parentPath)
 		return (
@@ -97,11 +117,17 @@ const Sidebar = () => {
 					const isAddingNewItem = addingToPath === item.path
 					if (item.kind === 'directory') {
 						return (
-							<li key={index}>
+							<li
+								key={index}
+								onDragOver={handleDragOver}
+								onDrop={(e) => handleDrop(e, item)} // Handle drop on folder
+							>
 								<div
 									className='cursor-pointer'
 									onClick={() => toggleFolder(item.path)}
 									onContextMenu={(e) => handleContextMenu(e, item)}
+									draggable // Make folder draggable
+									onDragStart={(e) => handleDragStart(e, item)} // Handle drag start
 								>
 									{renamingItem?.path === item.path ? (
 										<input
@@ -140,6 +166,8 @@ const Sidebar = () => {
 								onClick={() => openFile(item)}
 								onContextMenu={(e) => handleContextMenu(e, item)}
 								className='cursor-pointer'
+								draggable // Make file draggable
+								onDragStart={(e) => handleDragStart(e, item)} // Handle drag start
 							>
 								{renamingItem?.path === item.path ? (
 									<input
@@ -214,6 +242,7 @@ const Sidebar = () => {
 								Add File
 							</button>
 						</li>
+
 						{selectedItem?.kind === 'directory' ? (
 							<li>
 								<button

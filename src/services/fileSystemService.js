@@ -234,6 +234,80 @@ export const deleteFolder = async (folderPath) => {
 	}
 }
 
+// Helper function to move a file or folder
+export const moveItem = async (oldPath, newParentPath) => {
+	const {
+		projectFiles,
+		activeFile,
+		setActiveFile,
+		openedFiles,
+		setOpenedFiles,
+	} = useFileSystemStore.getState()
+
+	// Find the entry to move
+	const entryToMove = projectFiles.find((file) => file.path === oldPath)
+
+	if (entryToMove) {
+		const newPath = `${newParentPath}/${entryToMove.name}`
+
+		try {
+			if (entryToMove.kind === 'file') {
+				const file = await entryToMove.handle.getFile()
+				const newFolder = projectFiles.find((f) => f.path === newParentPath)
+				const newFileHandle = await newFolder.handle.getFileHandle(
+					entryToMove.name,
+					{
+						create: true,
+					},
+				)
+
+				// Write content to the new file
+				const writable = await newFileHandle.createWritable()
+				await writable.write(await file.text())
+				await writable.close()
+
+				await deleteFile(entryToMove.path)
+
+				// Update projectFiles state
+				await RefressProjectFiles()
+
+				// Update openedFiles
+				const updatedOpenedFiles = openedFiles.map((file) => {
+					if (file.path === oldPath) {
+						return { ...file, path: newPath }
+					}
+					return file
+				})
+				setOpenedFiles(updatedOpenedFiles)
+
+				// Update active file if it's the one being moved
+				if (activeFile?.path === oldPath) {
+					setActiveFile({ ...activeFile, path: newPath })
+				}
+			} else if (entryToMove.kind === 'directory') {
+				// Get the handles for the new directory
+				const newParent = await getParent(newParentPath)
+
+				const newDirHandle = await newParent.handle.getDirectoryHandle(
+					entryToMove.name,
+					{ create: true },
+				)
+
+				// Move contents from the old directory to the new one
+				await moveFolderContents(entryToMove.handle, newDirHandle)
+
+				// Delete the old directory after moving
+				await deleteFolder(entryToMove.path)
+
+				// Refresh the project files
+				await RefressProjectFiles()
+			}
+		} catch (error) {
+			console.error('Error moving entry:', error)
+		}
+	}
+}
+
 // Helper function to rename a file or folder
 export const renameItem = async (oldPath, newName) => {
 	const {
