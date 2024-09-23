@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     checker({
       eslint: {
-        lintCommand: 'eslint "./src/**/*.{js,jsx}"', // for example, lint .ts & .tsx
+        lintCommand: 'eslint "./src/**/*.{ts,tsx}"', // for example, lint .ts & .tsx
       },
     }),
   ]
