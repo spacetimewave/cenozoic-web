@@ -331,6 +331,29 @@ const moveFolderContents = async (oldFolderHandle, newFolderHandle) => {
 	}
 }
 
+export const createFolder = async (parentFolderPath, newFolderName) => {
+	const { projectFiles } = useFileSystemStore.getState()
+	// Recursively handle subdirectories
+	await projectFiles
+		.find((i) => i.path === parentFolderPath)
+		.handle.getDirectoryHandle(newFolderName, {
+			create: true,
+		})
+
+	await RefressProjectFiles()
+}
+
+export const createFile = async (parentFolderPath, newFileName) => {
+	const { projectFiles } = useFileSystemStore.getState()
+	// Recursively handle subdirectories
+	await projectFiles
+		.find((i) => i.path === parentFolderPath)
+		.handle.getFileHandle(newFileName, {
+			create: true,
+		})
+	await RefressProjectFiles()
+}
+
 export const RefressProjectFiles = async () => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 	const rootDirectory = projectFiles.find((i) => i.parentPath === null)

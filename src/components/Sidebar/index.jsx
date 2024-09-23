@@ -10,6 +10,8 @@ import {
 	deleteFolder,
 	deleteFile,
 	renameItem,
+	createFolder,
+	createFile,
 } from '../../services/FileSystemService'
 
 const Sidebar = () => {
@@ -17,10 +19,12 @@ const Sidebar = () => {
 	const { username, setUsername, setPassword } = useCredentialStore()
 	const { projectFiles } = useFileSystemStore()
 
-	const [contextMenu, setContextMenu] = useState(null) // Context menu state
-	const [selectedItem, setSelectedItem] = useState(null) // Store the selected folder/file
-	const [renamingItem, setRenamingItem] = useState(null) // The item currently being renamed
-	const [renameInput, setRenameInput] = useState('') // Rename input state
+	const [contextMenu, setContextMenu] = useState(null)
+	const [selectedItem, setSelectedItem] = useState(null)
+	const [renamingItem, setRenamingItem] = useState(null)
+	const [renameInput, setRenameInput] = useState('')
+	const [newItemName, setNewItemName] = useState('') // State for new item name
+	const [addingToPath, setAddingToPath] = useState(null) // State to track where to add a new item
 
 	useState(() => {}, projectFiles)
 
@@ -45,25 +49,39 @@ const Sidebar = () => {
 
 	const handleMenuAction = (action) => {
 		if (action === 'add-folder') {
-			console.log('Add folder to', selectedItem)
+			setNewItemName('') // Reset new item name
+			setAddingToPath(selectedItem.path) // Set the path to add the new item
 		} else if (action === 'add-file') {
-			console.log('Add file to', selectedItem)
+			setNewItemName('new.txt') // Default name for new file
+			setAddingToPath(selectedItem.path) // Set the path to add the new item
 		} else if (action === 'delete-folder') {
 			deleteFolder(selectedItem.path)
 		} else if (action === 'delete-file') {
 			deleteFile(selectedItem.path)
 		} else if (action === 'rename') {
-			setRenamingItem(selectedItem) // Set the item to rename
-			setRenameInput(selectedItem.name) // Initialize the rename input with the current name
+			setRenamingItem(selectedItem)
+			setRenameInput(selectedItem.name)
 		}
 		setContextMenu(null)
 	}
 
+	const handleNewItemBlur = async () => {
+		if (newItemName && addingToPath) {
+			console.log(addingToPath)
+			if (newItemName.endsWith('.txt')) {
+				await createFile(addingToPath, newItemName)
+			} else {
+				await createFolder(addingToPath, newItemName)
+			}
+			setNewItemName('') // Clear input after creation
+			setAddingToPath(null) // Reset adding path
+		}
+	}
+
 	const handleRenameBlur = async () => {
 		if (renamingItem) {
-			// Save the new name on blur
 			await renameItem(renamingItem.path, renameInput)
-			setRenamingItem(null) // Exit rename mode
+			setRenamingItem(null)
 		}
 	}
 
@@ -72,6 +90,7 @@ const Sidebar = () => {
 		return (
 			<ul className={parentPath === null ? '' : 'pl-2'}>
 				{items?.map((item, index) => {
+					const isAddingNewItem = addingToPath === item.path
 					if (item.kind === 'directory') {
 						return (
 							<li key={index}>
@@ -80,13 +99,12 @@ const Sidebar = () => {
 									onClick={() => toggleFolder(item.path)}
 									onContextMenu={(e) => handleContextMenu(e, item)}
 								>
-									{/* Display rename input if renaming, otherwise show the folder name */}
 									{renamingItem?.path === item.path ? (
 										<input
 											type='text'
 											value={renameInput}
 											onChange={(e) => setRenameInput(e.target.value)}
-											onBlur={handleRenameBlur} // Save the new name on blur
+											onBlur={handleRenameBlur}
 											autoFocus
 											className='w-full px-2 py-1 border text-black'
 										/>
@@ -97,6 +115,18 @@ const Sidebar = () => {
 									)}
 								</div>
 								{item.isOpen && renderTree(item.path)}
+								{/* Input for new item in the specific folder */}
+								{isAddingNewItem && (
+									<input
+										type='text'
+										value={newItemName}
+										onChange={(e) => setNewItemName(e.target.value)}
+										onBlur={handleNewItemBlur} // Save the new name on blur
+										placeholder='Enter name...'
+										className='w-full text-black px-2 py-1 border'
+										autoFocus
+									/>
+								)}
 							</li>
 						)
 					} else {
@@ -107,13 +137,12 @@ const Sidebar = () => {
 								onContextMenu={(e) => handleContextMenu(e, item)}
 								className='cursor-pointer'
 							>
-								{/* Display rename input if renaming, otherwise show the file name */}
 								{renamingItem?.path === item.path ? (
 									<input
 										type='text'
 										value={renameInput}
 										onChange={(e) => setRenameInput(e.target.value)}
-										onBlur={handleRenameBlur} // Save the new name on blur
+										onBlur={handleRenameBlur}
 										autoFocus
 										className='w-full text-black px-2 py-1 border'
 									/>
