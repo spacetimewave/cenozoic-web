@@ -122,6 +122,12 @@ export const getChildren = (parentPath) => {
 	return projectFiles.filter((file) => file.parentPath === parentPath)
 }
 
+// Function to get children of a directory (since it's now flat)
+export const getParent = (parentPath) => {
+	const { projectFiles } = useFileSystemStore.getState()
+	return projectFiles.find((file) => file.path === parentPath)
+}
+
 // Additional helper function to open or close all children of a directory
 export const toggleFolderRecursively = (path, isOpen) => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
@@ -248,34 +254,22 @@ export const renameItem = async (oldPath, newName) => {
 
 		try {
 			if (entryToRename.kind === 'file') {
-				// For files, create a new file with the new name and copy the content
-
-				// const file = await entryToRename.handle.getFile()
+				// For files, rename the file
 				await entryToRename.handle.move(newName)
 
-				// Update the projectFiles state
+				// Update projectFiles state
 				const updatedFiles = projectFiles.map((file) => {
 					if (file.path === oldPath) {
-						return {
-							...file,
-							path: newPath,
-							name: newName,
-						}
+						return { ...file, path: newPath, name: newName }
 					}
 					return file
 				})
 				setProjectFiles(updatedFiles)
 
-				// Update the openedFiles array
+				// Update openedFiles
 				const updatedOpenedFiles = openedFiles.map((file) => {
-					console.log(file)
 					if (file.path === oldPath) {
-						console.log('openedd')
-						return {
-							...file,
-							path: newPath,
-							name: newName,
-						}
+						return { ...file, path: newPath, name: newName }
 					}
 					return file
 				})
@@ -283,38 +277,28 @@ export const renameItem = async (oldPath, newName) => {
 
 				// Update active file if it's the one being renamed
 				if (activeFile?.path === oldPath) {
-					setActiveFile({
-						...activeFile,
-						path: newPath,
-						name: newName,
-					})
+					setActiveFile({ ...activeFile, path: newPath, name: newName })
 				}
 			} else if (entryToRename.kind === 'directory') {
 				// For directories, create a new directory with the new name
-				const parentDirHandle = await entryToRename.handle.getParent()
-				const newDirHandle = await parentDirHandle.getDirectoryHandle(newName, {
-					create: true,
-				})
+				const parentDirHandle = getParent(entryToRename.parentPath)
+				console.log(parentDirHandle)
+				const newDirHandle = await parentDirHandle.handle.getDirectoryHandle(
+					newName,
+					{
+						create: true,
+					},
+				)
+
+				console.log(newDirHandle)
 
 				// Move contents from the old directory to the new one
 				await moveFolderContents(entryToRename.handle, newDirHandle)
 
-				// Delete the old directory
-				await entryToRename.handle.remove()
+				// // Delete the old directory
+				await deleteFolder(entryToRename.path)
 
-				// Update the projectFiles state
-				const updatedFiles = projectFiles.map((file) => {
-					if (file.path.startsWith(oldPath)) {
-						const updatedPath = file.path.replace(oldPath, newPath) // Update the path for renamed folder and its children
-						return {
-							...file,
-							path: updatedPath,
-							name: file.path === oldPath ? newName : file.name,
-						}
-					}
-					return file
-				})
-				setProjectFiles(updatedFiles)
+				await RefressProjectFiles()
 			}
 		} catch (error) {
 			console.error('Error renaming entry:', error)
@@ -342,7 +326,15 @@ const moveFolderContents = async (oldFolderHandle, newFolderHandle) => {
 				entry.name,
 				{ create: true },
 			)
-			await moveFolderContents(entry, newSubDirHandle) // Recursively move subdirectory contents
+			await moveFolderContents(entry, newSubDirHandle)
 		}
 	}
+}
+
+export const RefressProjectFiles = async () => {
+	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
+	const rootDirectory = projectFiles.find((i) => i.parentPath === null)
+	console.log(rootDirectory)
+	const flatFileStructure = await ReadRootDirectory(rootDirectory.handle)
+	setProjectFiles(flatFileStructure)
 }
