@@ -7,6 +7,9 @@ import {
 	toggleFolder,
 	openFile,
 	getChildren,
+	deleteFolder,
+	deleteFile,
+	renameItem,
 } from '../../services/FileSystemService'
 
 const Sidebar = () => {
@@ -14,8 +17,10 @@ const Sidebar = () => {
 	const { username, setUsername, setPassword } = useCredentialStore()
 	const { projectFiles } = useFileSystemStore()
 
-	const [contextMenu, setContextMenu] = useState(null) // Context menu state (Add file, delete folder, add folder menu)
-	const [selectedFolder, setSelectedFolder] = useState(null) // To store the selected folder
+	const [contextMenu, setContextMenu] = useState(null) // Context menu state
+	const [selectedItem, setSelectedItem] = useState(null) // Store the selected folder/file
+	const [renamingItem, setRenamingItem] = useState(null) // The item currently being renamed
+	const [renameInput, setRenameInput] = useState('') // Rename input state
 
 	useState(() => {}, projectFiles)
 
@@ -29,29 +34,40 @@ const Sidebar = () => {
 		navigate('/login')
 	}
 
-	const handleContextMenu = (e, folder) => {
+	const handleContextMenu = (e, item) => {
 		e.preventDefault()
 		setContextMenu({
 			top: e.clientY,
 			left: e.clientX,
 		})
-		setSelectedFolder(folder)
+		setSelectedItem(item)
 	}
 
 	const handleMenuAction = (action) => {
 		if (action === 'add-folder') {
-			console.log('Add folder to', selectedFolder)
+			console.log('Add folder to', selectedItem)
 		} else if (action === 'add-file') {
-			console.log('Add file to', selectedFolder)
-		} else if (action === 'delete') {
-			console.log('Delete', selectedFolder)
+			console.log('Add file to', selectedItem)
+		} else if (action === 'delete-folder') {
+			deleteFolder(selectedItem.path)
+		} else if (action === 'delete-file') {
+			deleteFile(selectedItem.path)
+		} else if (action === 'rename') {
+			setRenamingItem(selectedItem) // Set the item to rename
+			setRenameInput(selectedItem.name) // Initialize the rename input with the current name
 		}
 		setContextMenu(null)
 	}
 
-	const renderTree = (parentPath = null) => {
-		// Get the files and directories that are children of the given parentPath
+	const handleRenameBlur = async () => {
+		if (renamingItem) {
+			// Save the new name on blur
+			await renameItem(renamingItem.path, renameInput)
+			setRenamingItem(null) // Exit rename mode
+		}
+	}
 
+	const renderTree = (parentPath = null) => {
 		const items = getChildren(parentPath)
 		return (
 			<ul className={parentPath === null ? '' : 'pl-2'}>
@@ -64,7 +80,21 @@ const Sidebar = () => {
 									onClick={() => toggleFolder(item.path)}
 									onContextMenu={(e) => handleContextMenu(e, item)}
 								>
-									{item.isOpen ? '📂' : '📁'} {item.name}
+									{/* Display rename input if renaming, otherwise show the folder name */}
+									{renamingItem?.path === item.path ? (
+										<input
+											type='text'
+											value={renameInput}
+											onChange={(e) => setRenameInput(e.target.value)}
+											onBlur={handleRenameBlur} // Save the new name on blur
+											autoFocus
+											className='w-full px-2 py-1 border text-black'
+										/>
+									) : (
+										<>
+											{item.isOpen ? '📂' : '📁'} {item.name}
+										</>
+									)}
 								</div>
 								{item.isOpen && renderTree(item.path)}
 							</li>
@@ -73,10 +103,23 @@ const Sidebar = () => {
 						return (
 							<li
 								key={index}
-								onClick={() => openFile(item.handle)}
+								onClick={() => openFile(item)}
+								onContextMenu={(e) => handleContextMenu(e, item)}
 								className='cursor-pointer'
 							>
-								📝 {item.name}
+								{/* Display rename input if renaming, otherwise show the file name */}
+								{renamingItem?.path === item.path ? (
+									<input
+										type='text'
+										value={renameInput}
+										onChange={(e) => setRenameInput(e.target.value)}
+										onBlur={handleRenameBlur} // Save the new name on blur
+										autoFocus
+										className='w-full text-black px-2 py-1 border'
+									/>
+								) : (
+									<>📝 {item.name}</>
+								)}
 							</li>
 						)
 					}
@@ -138,12 +181,31 @@ const Sidebar = () => {
 								Add File
 							</button>
 						</li>
+						{selectedItem?.kind === 'directory' ? (
+							<li>
+								<button
+									onClick={() => handleMenuAction('delete-folder')}
+									className='w-full text-left px-4 py-2 hover:bg-gray-100'
+								>
+									Delete Folder
+								</button>
+							</li>
+						) : (
+							<li>
+								<button
+									onClick={() => handleMenuAction('delete-file')}
+									className='w-full text-left px-4 py-2 hover:bg-gray-100'
+								>
+									Delete File
+								</button>
+							</li>
+						)}
 						<li>
 							<button
-								onClick={() => handleMenuAction('delete')}
+								onClick={() => handleMenuAction('rename')}
 								className='w-full text-left px-4 py-2 hover:bg-gray-100'
 							>
-								Delete
+								Rename
 							</button>
 						</li>
 					</ul>
