@@ -1,6 +1,8 @@
 import { create } from 'zustand'
+import { IFileSystem } from '../interfaces/IFileSystem'
+import { IFile } from '../interfaces/IFile'
 
-export const useFileSystemStore = create((set) => ({
+export const useFileSystemStore = create<IFileSystem>((set) => ({
 	openedFiles: [], // list of opened files (flat)
 	activeFile: null, // active file (focus)
 	projectFiles: [], // flat list of project files and directories
@@ -9,7 +11,7 @@ export const useFileSystemStore = create((set) => ({
 	setProjectFiles: (files) => set({ projectFiles: files }),
 }))
 
-export const openFile = async (openFile) => {
+export const openFile = async (openFile: IFile) => {
 	const { openedFiles, setOpenedFiles, setActiveFile } =
 		useFileSystemStore.getState()
 
