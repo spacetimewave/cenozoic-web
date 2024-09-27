@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
-import { useFileEditorStore } from '../../services/FileSystemService'
+import {
+	useFileEditorStore,
+	useFileSystemStore,
+} from '../../services/FileSystemService'
+import { FileSystemFileHandle, IFile } from '../../interfaces/IFileSystem'
 
 const FileManager = ({ selectedFile }: any | null) => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
 		useFileEditorStore()
-	const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
-	const [closingTabIndex, setClosingTabIndex] = useState(null)
+	const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false)
+	const [closingTabIndex, setClosingTabIndex] = useState<number | null>(null)
 
 	useEffect(() => {
 		if (selectedFile) {
@@ -15,7 +19,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 		}
 	}, [selectedFile])
 
-	const handleFileSelect = async (fileHandle) => {
+	const handleFileSelect = async (fileHandle: FileSystemFileHandle) => {
 		const file = await fileHandle.getFile()
 		const fileContent = await file.text()
 		const fileName = file.name
@@ -25,18 +29,19 @@ const FileManager = ({ selectedFile }: any | null) => {
 		if (existingFileIndex !== -1) {
 			setActiveFile(openedFiles[existingFileIndex])
 		} else {
-			const newFile = {
-				name: fileName,
-				content: fileContent,
-				isSaved: true,
-				handle: fileHandle,
-			}
-			setOpenedFiles((prevFiles) => [...prevFiles, newFile])
-			setActiveFile(newFile) // Set the newly added file as active
+			const { projectFiles } = useFileSystemStore()
+			const existingFile = projectFiles.find((f) => f.name === fileName)
+
+			if (existingFile === undefined) return
+			existingFile.content = fileContent
+			setOpenedFiles([...openedFiles, existingFile as IFile])
+			setActiveFile(existingFile as IFile) // Set the newly added file as active
 		}
 	}
 
-	const handleCodeChange = (newValue) => {
+	const handleCodeChange = (newValue: string) => {
+		if (activeFile === null) return
+
 		const updatedActiveFile = {
 			...activeFile,
 			content: newValue,
@@ -51,7 +56,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 	}
 
 	const handleSave = async () => {
-		if (!activeFile) return
+		if (activeFile === null) return
 
 		const writable = await activeFile.handle.createWritable()
 		await writable.write(activeFile.content)
@@ -66,7 +71,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 		setOpenedFiles(updatedFiles)
 	}
 
-	const confirmCloseTab = (index) => {
+	const confirmCloseTab = (index: number) => {
 		if (!openedFiles[index].isSaved) {
 			setClosingTabIndex(index)
 			setIsSaveModalOpen(true)
@@ -75,7 +80,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 		}
 	}
 
-	const handleCloseTab = (index) => {
+	const handleCloseTab = (index: number) => {
 		const updatedFiles = openedFiles.filter((_, i) => i !== index)
 		setOpenedFiles(updatedFiles)
 
@@ -89,11 +94,11 @@ const FileManager = ({ selectedFile }: any | null) => {
 
 	const handleModalSave = async () => {
 		await handleSave() // Wait for the save to complete
-		handleCloseTab(closingTabIndex) // Close the tab without reopening
+		if (closingTabIndex !== null) handleCloseTab(closingTabIndex) // Close the tab without reopening
 	}
 
 	const handleModalDiscard = () => {
-		handleCloseTab(closingTabIndex)
+		if (closingTabIndex !== null) handleCloseTab(closingTabIndex)
 	}
 
 	const handleModalCancel = () => {
@@ -101,7 +106,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 	}
 
 	useEffect(() => {
-		const handleKeyDown = (e) => {
+		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.ctrlKey && e.key === 's') {
 				e.preventDefault()
 				handleSave()
@@ -152,7 +157,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 				/>
 			)}
 
-			{isSaveModalOpen && (
+			{isSaveModalOpen && closingTabIndex !== null && (
 				<SaveModal
 					fileName={openedFiles[closingTabIndex]?.name}
 					onSave={handleModalSave}

@@ -48,7 +48,7 @@ export interface IFile {
 	parentPath: string | null
 	kind: 'file'
 	handle: FileSystemFileHandle
-	content: string | null
+	content: string
 	isSaved: boolean
 	isOpen: boolean
 }
@@ -59,7 +59,7 @@ export interface IFolder {
 	parentPath: string | null
 	kind: 'directory'
 	handle: FileSystemDirectoryHandle
-	content: string | null
+	content: null
 	isSaved: boolean
 	isOpen: boolean
 }
@@ -70,8 +70,8 @@ export interface IFileSystemStore {
 }
 
 export interface IFileEditorStore {
-	openedFiles: (IFile | IFolder)[]
-	activeFile: IFile | IFolder | null
-	setOpenedFiles: (files: (IFile | IFolder)[]) => void
-	setActiveFile: (file: IFile | IFolder | null) => void
+	openedFiles: IFile[]
+	activeFile: IFile | null
+	setOpenedFiles: (files: IFile[]) => void
+	setActiveFile: (file: IFile | null) => void
 }

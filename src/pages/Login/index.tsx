@@ -6,15 +6,15 @@ const Login = () => {
 	const navigate = useNavigate()
 	const { setUsername, setPassword } = useCredentialStore()
 
-	const [username, setUsernameState] = useState('')
-	const [password, setPasswordState] = useState('')
+	const [username, setUsernameState] = useState<string>('')
+	const [password, setPasswordState] = useState<string>('')
 
-	const handleSubmit = (ev) => {
+	const handleSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
 		ev.preventDefault()
 		login(username, password)
 	}
 
-	const login = (username, password) => {
+	const login = (username: string, password: string) => {
 		setUsername(username)
 		setPassword(password)
 		navigate('/editor')
