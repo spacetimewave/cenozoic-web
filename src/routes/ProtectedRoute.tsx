@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom'
 
-import useCredentialStore from '../state'
+import { useCredentialStore } from '../services/AuthService'
 
-function ProtectedRoute({ children }:any) {
+function ProtectedRoute({ children }: any) {
 	const { username, password } = useCredentialStore()
 	if (!username && !password) {
 		return <Navigate to='/' replace />

@@ -65,10 +65,13 @@ export interface IFolder {
 }
 
 export interface IFileSystemStore {
+	projectFiles: (IFile | IFolder)[]
+	setProjectFiles: (files: (IFile | IFolder)[]) => void
+}
+
+export interface IFileEditorStore {
 	openedFiles: (IFile | IFolder)[]
 	activeFile: IFile | IFolder | null
-	projectFiles: (IFile | IFolder)[]
 	setOpenedFiles: (files: (IFile | IFolder)[]) => void
 	setActiveFile: (file: IFile | IFolder | null) => void
-	setProjectFiles: (files: (IFile | IFolder)[]) => void
 }

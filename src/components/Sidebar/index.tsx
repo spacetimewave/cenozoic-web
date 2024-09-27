@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import useCredentialStore from '../../state'
+import { useCredentialStore } from '../../services/AuthService'
 import {
 	SelectProjectFolder,
 	useFileSystemStore,
@@ -12,7 +12,7 @@ import {
 	renameItem,
 	createFolder,
 	createFile,
-	moveItem, // Add this service to handle moving items
+	moveItem,
 } from '../../services/FileSystemService'
 
 const Sidebar = () => {

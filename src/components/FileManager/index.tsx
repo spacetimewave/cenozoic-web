@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
-import { useFileSystemStore } from '../../services/FileSystemService'
+import { useFileEditorStore } from '../../services/FileSystemService'
 
 const FileManager = ({ selectedFile }: any | null) => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
-		useFileSystemStore()
+		useFileEditorStore()
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
 	const [closingTabIndex, setClosingTabIndex] = useState(null)
 

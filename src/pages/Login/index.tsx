@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import useCredentialStore from '../../state'
+import { useCredentialStore } from '../../services/AuthService'
 
 const Login = () => {
 	const navigate = useNavigate()

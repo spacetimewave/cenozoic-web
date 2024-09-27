@@ -6,15 +6,19 @@ import {
 	FileSystemHandle,
 	FileSystemDirectoryHandle,
 	FileSystemFileHandle,
+	IFileEditorStore,
 } from '../interfaces/IFileSystem'
 
 export const useFileSystemStore = create<IFileSystemStore>((set) => ({
+	projectFiles: [], // flat list of project files and directories
+	setProjectFiles: (files) => set({ projectFiles: files }),
+}))
+
+export const useFileEditorStore = create<IFileEditorStore>((set) => ({
 	openedFiles: [], // list of opened files (flat)
 	activeFile: null, // active file (focus)
-	projectFiles: [], // flat list of project files and directories
 	setOpenedFiles: (files) => set({ openedFiles: files }),
 	setActiveFile: (file) => set({ activeFile: file }),
-	setProjectFiles: (files) => set({ projectFiles: files }),
 }))
 
 export const SelectProjectFolder = async () => {
@@ -96,7 +100,7 @@ const ReadDirectory = async (
 
 export const openFile = async (openFile: IFile) => {
 	const { openedFiles, setOpenedFiles, setActiveFile } =
-		useFileSystemStore.getState()
+		useFileEditorStore.getState()
 
 	// Check if the file is already open
 	const fileExists = openedFiles?.find(
@@ -124,7 +128,7 @@ export const openFile = async (openFile: IFile) => {
 }
 
 export const closeFile = (fileIndex: number) => {
-	const { openedFiles, setOpenedFiles } = useFileSystemStore.getState()
+	const { openedFiles, setOpenedFiles } = useFileEditorStore.getState()
 	setOpenedFiles(openedFiles.filter((_, index) => index !== fileIndex))
 }
 
@@ -167,14 +171,10 @@ export const toggleFolderRecursively = (path: string, isOpen: boolean) => {
 
 // Delete a single file
 export const deleteFile = async (filePath: string) => {
-	const {
-		projectFiles,
-		setProjectFiles,
-		openedFiles,
-		setOpenedFiles,
-		activeFile,
-		setActiveFile,
-	} = useFileSystemStore.getState()
+	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
+
+	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
+		useFileEditorStore.getState()
 
 	// Find the file to delete
 	const fileToDelete = projectFiles.find(
@@ -266,13 +266,10 @@ export const deleteFolder = async (folderPath: string) => {
 
 // Helper function to move a file or folder
 export const moveItem = async (oldPath: string, newParentPath: string) => {
-	const {
-		projectFiles,
-		activeFile,
-		setActiveFile,
-		openedFiles,
-		setOpenedFiles,
-	} = useFileSystemStore.getState()
+	const { projectFiles } = useFileSystemStore.getState()
+
+	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
+		useFileEditorStore.getState()
 
 	// Find the entry to move
 	const entryToMove = projectFiles.find((file) => file.path === oldPath)
@@ -344,14 +341,10 @@ export const moveItem = async (oldPath: string, newParentPath: string) => {
 
 // Helper function to rename a file or folder
 export const renameItem = async (oldPath: string, newName: string) => {
-	const {
-		projectFiles,
-		setProjectFiles,
-		activeFile,
-		setActiveFile,
-		openedFiles,
-		setOpenedFiles,
-	} = useFileSystemStore.getState()
+	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
+
+	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
+		useFileEditorStore.getState()
 
 	// Find the entry to rename
 	const entryToRename = projectFiles.find((file) => file.path === oldPath)
