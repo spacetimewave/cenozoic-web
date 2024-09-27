@@ -1,8 +1,14 @@
 import { create } from 'zustand'
-import { IFileSystem } from '../interfaces/IFileSystem'
-import { IFile } from '../interfaces/IFile'
+import {
+	IFile,
+	IFolder,
+	IFileSystemStore,
+	FileSystemHandle,
+	FileSystemDirectoryHandle,
+	FileSystemFileHandle,
+} from '../interfaces/IFileSystem'
 
-export const useFileSystemStore = create<IFileSystem>((set) => ({
+export const useFileSystemStore = create<IFileSystemStore>((set) => ({
 	openedFiles: [], // list of opened files (flat)
 	activeFile: null, // active file (focus)
 	projectFiles: [], // flat list of project files and directories
@@ -10,37 +16,6 @@ export const useFileSystemStore = create<IFileSystem>((set) => ({
 	setActiveFile: (file) => set({ activeFile: file }),
 	setProjectFiles: (files) => set({ projectFiles: files }),
 }))
-
-export const openFile = async (openFile: IFile) => {
-	const { openedFiles, setOpenedFiles, setActiveFile } =
-		useFileSystemStore.getState()
-
-	// Check if the file is already open
-	const fileExists = openedFiles?.find(
-		(file) => file.handle === openFile.handle,
-	)
-
-	if (!fileExists) {
-		const file = await openFile.handle.getFile()
-		const newFile = {
-			handle: openFile.handle,
-			name: openFile.name,
-			path: openFile.path,
-			content: await file.text(),
-			isSaved: true,
-		}
-
-		setOpenedFiles([...openedFiles, newFile]) // Push the new file
-		setActiveFile(newFile)
-	} else {
-		setActiveFile(fileExists)
-	}
-}
-
-export const closeFile = (fileIndex) => {
-	const { openedFiles, setOpenedFiles } = useFileSystemStore.getState()
-	setOpenedFiles(openedFiles.filter((_, index) => index !== fileIndex))
-}
 
 export const SelectProjectFolder = async () => {
 	const { setProjectFiles } = useFileSystemStore.getState()
@@ -60,51 +35,100 @@ export const SelectProjectFolder = async () => {
 	return []
 }
 
-export const ReadRootDirectory = async (directoryHandle) => {
-	const rootDirectory = {
-		path: '/' + directoryHandle.name,
+export const ReadRootDirectory = async (
+	directoryHandle: FileSystemDirectoryHandle,
+): Promise<(IFile | IFolder)[]> => {
+	let files: (IFile | IFolder)[] = []
+	const rootDirectory: IFolder = {
 		name: directoryHandle.name,
+		path: '/' + directoryHandle.name,
+		parentPath: null, // root
 		kind: 'directory',
 		handle: directoryHandle,
+		content: null,
+		isSaved: true,
 		isOpen: false,
-		parentPath: null, // Root has no parent
 	}
-
 	// Read the directory and flatten the structure
-	const flatStructure = [rootDirectory]
-	await ReadDirectory(rootDirectory, flatStructure)
-	return flatStructure
+	files.push(rootDirectory)
+	await ReadDirectory(rootDirectory, files)
+	return files
 }
 
 // Recursively read directories and flatten into a single array
-const ReadDirectory = async (parentDirectory, flatStructure) => {
-	for await (const entry of parentDirectory.handle.values()) {
-		const fullPath = parentDirectory.path + '/' + entry.name
-		if (entry.kind === 'directory') {
-			const directory = {
-				path: fullPath,
-				name: entry.name,
-				kind: entry.kind,
-				handle: entry,
-				isOpen: false,
+const ReadDirectory = async (
+	parentDirectory: IFile | IFolder,
+	flatStructure: (IFile | IFolder)[],
+) => {
+	const childrenHandlers: FileSystemHandle[] = await (
+		parentDirectory.handle as FileSystemDirectoryHandle
+	).values()
+
+	for await (const childHandler of childrenHandlers) {
+		if (childHandler.kind === 'directory') {
+			const directory: IFolder = {
+				name: childHandler.name,
+				path: parentDirectory.path + '/' + childHandler.name,
 				parentPath: parentDirectory.path,
+				kind: childHandler.kind,
+				handle: childHandler as FileSystemDirectoryHandle,
+				content: null,
+				isSaved: true,
+				isOpen: false,
 			}
 			flatStructure.push(directory)
 			await ReadDirectory(directory, flatStructure) // Recursive read for directories
 		} else {
-			const file = {
-				path: fullPath,
-				name: entry.name,
-				kind: entry.kind,
-				handle: entry,
-				parentPath: parentDirectory.path, // Reference to parent
+			const file: IFile = {
+				name: childHandler.name,
+				path: parentDirectory.path + '/' + childHandler.name,
+				parentPath: parentDirectory.path,
+				kind: childHandler.kind,
+				handle: childHandler as FileSystemFileHandle,
+				content: null,
+				isSaved: true,
+				isOpen: false,
 			}
 			flatStructure.push(file)
 		}
 	}
 }
 
-export const toggleFolder = (path) => {
+export const openFile = async (openFile: IFile) => {
+	const { openedFiles, setOpenedFiles, setActiveFile } =
+		useFileSystemStore.getState()
+
+	// Check if the file is already open
+	const fileExists = openedFiles?.find(
+		(file) => file.handle === openFile.handle,
+	)
+
+	if (!fileExists) {
+		const file = await openFile.handle.getFile()
+		const newFile = {
+			name: openFile.name,
+			path: openFile.path,
+			parentPath: openFile.parentPath,
+			kind: openFile.kind,
+			handle: openFile.handle,
+			content: await file.text(),
+			isSaved: true,
+			isOpen: true,
+		}
+
+		setOpenedFiles([...openedFiles, newFile]) // Push the new file
+		setActiveFile(newFile)
+	} else {
+		setActiveFile(fileExists)
+	}
+}
+
+export const closeFile = (fileIndex: number) => {
+	const { openedFiles, setOpenedFiles } = useFileSystemStore.getState()
+	setOpenedFiles(openedFiles.filter((_, index) => index !== fileIndex))
+}
+
+export const toggleFolder = (path: string) => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 	// Toggle the folder state
 	const updatedFiles = projectFiles.map((file) => {
@@ -117,19 +141,19 @@ export const toggleFolder = (path) => {
 }
 
 // Function to get children of a directory (since it's now flat)
-export const getChildren = (parentPath) => {
+export const getChildren = (parentPath: string): (IFile | IFolder)[] => {
 	const { projectFiles } = useFileSystemStore.getState()
 	return projectFiles.filter((file) => file.parentPath === parentPath)
 }
 
-// Function to get children of a directory (since it's now flat)
-export const getParent = (parentPath) => {
+// Function to get children parent of a file or folder
+export const getParent = (parentPath: string | null): IFolder | undefined => {
 	const { projectFiles } = useFileSystemStore.getState()
-	return projectFiles.find((file) => file.path === parentPath)
+	return projectFiles.find((file) => file.path === parentPath) as IFolder
 }
 
 // Additional helper function to open or close all children of a directory
-export const toggleFolderRecursively = (path, isOpen) => {
+export const toggleFolderRecursively = (path: string, isOpen: boolean) => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 	// Find the target folder and its children
 	const updatedFiles = projectFiles.map((file) => {
@@ -142,7 +166,7 @@ export const toggleFolderRecursively = (path, isOpen) => {
 }
 
 // Delete a single file
-export const deleteFile = async (filePath) => {
+export const deleteFile = async (filePath: string) => {
 	const {
 		projectFiles,
 		setProjectFiles,
@@ -183,8 +207,12 @@ export const deleteFile = async (filePath) => {
 }
 
 // Helper function to recursively delete all contents inside a folder
-const deleteFolderContents = async (folderHandle) => {
-	for await (const entry of folderHandle.values()) {
+const deleteFolderContents = async (
+	folderHandle: FileSystemDirectoryHandle,
+) => {
+	const childrenHandlers: FileSystemHandle[] = await folderHandle.values()
+
+	for await (const entry of childrenHandlers) {
 		if (entry.kind === 'file') {
 			// Delete file
 			try {
@@ -194,7 +222,7 @@ const deleteFolderContents = async (folderHandle) => {
 			}
 		} else if (entry.kind === 'directory') {
 			// Recursively delete subfolder contents
-			await deleteFolderContents(entry)
+			await deleteFolderContents(entry as FileSystemDirectoryHandle)
 			// Delete the now empty subfolder
 			try {
 				await entry.remove()
@@ -206,7 +234,7 @@ const deleteFolderContents = async (folderHandle) => {
 }
 
 // Delete a folder and its contents recursively
-export const deleteFolder = async (folderPath) => {
+export const deleteFolder = async (folderPath: string) => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 
 	// Find the folder to delete
@@ -216,7 +244,9 @@ export const deleteFolder = async (folderPath) => {
 
 	if (folderToDelete) {
 		// Delete all the contents of the folder
-		await deleteFolderContents(folderToDelete.handle)
+		await deleteFolderContents(
+			folderToDelete.handle as FileSystemDirectoryHandle,
+		)
 
 		// Finally delete the folder itself
 		try {
@@ -235,7 +265,7 @@ export const deleteFolder = async (folderPath) => {
 }
 
 // Helper function to move a file or folder
-export const moveItem = async (oldPath, newParentPath) => {
+export const moveItem = async (oldPath: string, newParentPath: string) => {
 	const {
 		projectFiles,
 		activeFile,
@@ -254,7 +284,10 @@ export const moveItem = async (oldPath, newParentPath) => {
 			if (entryToMove.kind === 'file') {
 				const file = await entryToMove.handle.getFile()
 				const newFolder = projectFiles.find((f) => f.path === newParentPath)
-				const newFileHandle = await newFolder.handle.getFileHandle(
+
+				if (newFolder === undefined) return
+
+				const newFileHandle = await (newFolder as IFolder).handle.getFileHandle(
 					entryToMove.name,
 					{
 						create: true,
@@ -288,10 +321,11 @@ export const moveItem = async (oldPath, newParentPath) => {
 				// Get the handles for the new directory
 				const newParent = await getParent(newParentPath)
 
-				const newDirHandle = await newParent.handle.getDirectoryHandle(
-					entryToMove.name,
-					{ create: true },
-				)
+				if (newParent === undefined) return
+
+				const newDirHandle = await (
+					newParent as IFolder
+				).handle.getDirectoryHandle(entryToMove.name, { create: true })
 
 				// Move contents from the old directory to the new one
 				await moveFolderContents(entryToMove.handle, newDirHandle)
@@ -309,7 +343,7 @@ export const moveItem = async (oldPath, newParentPath) => {
 }
 
 // Helper function to rename a file or folder
-export const renameItem = async (oldPath, newName) => {
+export const renameItem = async (oldPath: string, newName: string) => {
 	const {
 		projectFiles,
 		setProjectFiles,
@@ -357,6 +391,8 @@ export const renameItem = async (oldPath, newName) => {
 				// For directories, create a new directory with the new name
 				const parentDirHandle = getParent(entryToRename.parentPath)
 
+				if (parentDirHandle === undefined) return
+
 				const newDirHandle = await parentDirHandle.handle.getDirectoryHandle(
 					newName,
 					{
@@ -379,12 +415,16 @@ export const renameItem = async (oldPath, newName) => {
 }
 
 // Helper function to move contents of a folder to a new folder
-const moveFolderContents = async (oldFolderHandle, newFolderHandle) => {
-	for await (const entry of oldFolderHandle.values()) {
-		if (entry.kind === 'file') {
+const moveFolderContents = async (
+	oldFolderHandle: FileSystemDirectoryHandle,
+	newFolderHandle: FileSystemDirectoryHandle,
+) => {
+	const folderChilds = await oldFolderHandle.values()
+	for (const child of folderChilds) {
+		if (child.kind === 'file') {
 			// Get the file and create a new file handle in the new directory
-			const file = await entry.getFile()
-			const newFileHandle = await newFolderHandle.getFileHandle(entry.name, {
+			const file = await (child as FileSystemFileHandle).getFile()
+			const newFileHandle = await newFolderHandle.getFileHandle(child.name, {
 				create: true,
 			})
 
@@ -392,43 +432,57 @@ const moveFolderContents = async (oldFolderHandle, newFolderHandle) => {
 			const writable = await newFileHandle.createWritable()
 			await writable.write(await file.text())
 			await writable.close()
-		} else if (entry.kind === 'directory') {
+		} else if (child.kind === 'directory') {
 			// Recursively handle subdirectories
 			const newSubDirHandle = await newFolderHandle.getDirectoryHandle(
-				entry.name,
+				child.name,
 				{ create: true },
 			)
-			await moveFolderContents(entry, newSubDirHandle)
+			await moveFolderContents(
+				child as FileSystemDirectoryHandle,
+				newSubDirHandle,
+			)
 		}
 	}
 }
 
-export const createFolder = async (parentFolderPath, newFolderName) => {
+export const createFolder = async (
+	parentFolderPath: string,
+	newFolderName: string,
+) => {
 	const { projectFiles } = useFileSystemStore.getState()
 	// Recursively handle subdirectories
-	await projectFiles
-		.find((i) => i.path === parentFolderPath)
-		.handle.getDirectoryHandle(newFolderName, {
-			create: true,
-		})
+	await (
+		projectFiles.find((i) => i.path === parentFolderPath)
+			?.handle as FileSystemDirectoryHandle
+	).getDirectoryHandle(newFolderName, {
+		create: true,
+	})
 
 	await RefressProjectFiles()
 }
 
-export const createFile = async (parentFolderPath, newFileName) => {
+export const createFile = async (
+	parentFolderPath: string,
+	newFileName: string,
+) => {
 	const { projectFiles } = useFileSystemStore.getState()
 	// Recursively handle subdirectories
-	await projectFiles
-		.find((i) => i.path === parentFolderPath)
-		.handle.getFileHandle(newFileName, {
-			create: true,
-		})
+	await (
+		projectFiles.find((i) => i.path === parentFolderPath)
+			?.handle as FileSystemDirectoryHandle
+	).getFileHandle(newFileName, {
+		create: true,
+	})
 	await RefressProjectFiles()
 }
 
 export const RefressProjectFiles = async () => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 	const rootDirectory = projectFiles.find((i) => i.parentPath === null)
-	const flatFileStructure = await ReadRootDirectory(rootDirectory.handle)
+	if (rootDirectory === undefined) return
+	const flatFileStructure = await ReadRootDirectory(
+		rootDirectory.handle as FileSystemDirectoryHandle,
+	)
 	setProjectFiles(flatFileStructure)
 }
