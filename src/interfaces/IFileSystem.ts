@@ -19,7 +19,7 @@ export interface FileSystemHandle {
 		mode: 'read' | 'readwrite'
 	}) => Promise<PermissionStatus['state']>
 
-	move: (name: string) => Promise<undefined>
+	move: (name: string) => Promise<undefined> // Warning: It's not supported yet by all browsers
 }
 
 export interface FileSystemFileHandle extends FileSystemHandle {

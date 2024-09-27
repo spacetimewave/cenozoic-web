@@ -302,7 +302,7 @@ export const moveItem = async (oldPath: string, newParentPath: string) => {
 				await deleteFile(entryToMove.path)
 
 				// Update projectFiles state
-				await RefressProjectFiles()
+				await RefreshProjectFiles()
 
 				// Update openedFiles
 				const updatedOpenedFiles = openedFiles.map((file) => {
@@ -334,7 +334,7 @@ export const moveItem = async (oldPath: string, newParentPath: string) => {
 				await deleteFolder(entryToMove.path)
 
 				// Refresh the project files
-				await RefressProjectFiles()
+				await RefreshProjectFiles()
 			}
 		} catch (error) {
 			console.error('Error moving entry:', error)
@@ -406,7 +406,7 @@ export const renameItem = async (oldPath: string, newName: string) => {
 				// // Delete the old directory
 				await deleteFolder(entryToRename.path)
 
-				await RefressProjectFiles()
+				await RefreshProjectFiles()
 			}
 		} catch (error) {
 			console.error('Error renaming entry:', error)
@@ -420,7 +420,8 @@ const moveFolderContents = async (
 	newFolderHandle: FileSystemDirectoryHandle,
 ) => {
 	const folderChilds = await oldFolderHandle.values()
-	for (const child of folderChilds) {
+	console.log(folderChilds)
+	for await (const child of folderChilds) {
 		if (child.kind === 'file') {
 			// Get the file and create a new file handle in the new directory
 			const file = await (child as FileSystemFileHandle).getFile()
@@ -459,7 +460,7 @@ export const createFolder = async (
 		create: true,
 	})
 
-	await RefressProjectFiles()
+	await RefreshProjectFiles()
 }
 
 export const createFile = async (
@@ -474,15 +475,45 @@ export const createFile = async (
 	).getFileHandle(newFileName, {
 		create: true,
 	})
-	await RefressProjectFiles()
+	await RefreshProjectFiles()
 }
 
-export const RefressProjectFiles = async () => {
+export const RefreshProjectFiles = async () => {
 	const { projectFiles, setProjectFiles } = useFileSystemStore.getState()
 	const rootDirectory = projectFiles.find((i) => i.parentPath === null)
 	if (rootDirectory === undefined) return
+
 	const flatFileStructure = await ReadRootDirectory(
 		rootDirectory.handle as FileSystemDirectoryHandle,
 	)
-	setProjectFiles(flatFileStructure)
+
+	// Create a map to keep track of existing file/folder states
+	const existingFilesMap = new Map<
+		string,
+		{ isOpen: boolean; isSaved: boolean }
+	>()
+	projectFiles.forEach((file) => {
+		existingFilesMap.set(file.path, {
+			isOpen: file.isOpen,
+			isSaved: file.isSaved,
+		})
+	})
+
+	// Update the flat file structure while preserving isOpen and isSaved if the file exists
+	const updatedFileStructure = flatFileStructure.map((newFile) => {
+		const existingFileState = existingFilesMap.get(newFile.path)
+		if (existingFileState) {
+			// Preserve isOpen and isSaved from the old state
+			return {
+				...newFile,
+				isOpen: existingFileState.isOpen,
+				isSaved: existingFileState.isSaved,
+			}
+		}
+		// If the file is new, return it as is
+		return newFile
+	})
+
+	// Set the new file structure
+	setProjectFiles(updatedFileStructure)
 }
