@@ -1,4 +1,11 @@
-const SaveModal = ({ fileName, onSave, onDiscard, onCancel }) => (
+interface Props {
+	fileName: string
+	onSave: () => Promise<void>
+	onDiscard: () => void
+	onCancel: () => void
+}
+
+const SaveModal = ({ fileName, onSave, onDiscard, onCancel }: Props) => (
 	<div className='fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-5 border border-gray-300 z-50'>
 		<p className='mb-4'>
 			Do you want to save changes to {fileName} before closing?

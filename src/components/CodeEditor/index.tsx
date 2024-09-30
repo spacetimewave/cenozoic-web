@@ -1,6 +1,11 @@
 import MonacoEditor from 'react-monaco-editor'
 
-const CodeEditor = ({ value, onChange }) => {
+interface Props {
+	value: string
+	onChange: (newValue: string) => void
+}
+
+const CodeEditor = ({ value, onChange }: Props) => {
 	return (
 		<MonacoEditor
 			language='javascript'
