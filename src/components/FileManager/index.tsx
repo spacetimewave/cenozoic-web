@@ -1,43 +1,13 @@
 import { useState, useEffect } from 'react'
 import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
-import {
-	useFileEditorStore,
-	useFileSystemStore,
-} from '../../services/FileSystemService'
-import { FileSystemFileHandle, IFile } from '../../interfaces/IFileSystem'
+import { useFileEditorStore } from '../../services/FileSystemService'
 
-const FileManager = ({ selectedFile }: any | null) => {
+const FileManager = () => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
 		useFileEditorStore()
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false)
 	const [closingTabIndex, setClosingTabIndex] = useState<number | null>(null)
-
-	useEffect(() => {
-		if (selectedFile) {
-			handleFileSelect(selectedFile)
-		}
-	}, [selectedFile])
-
-	const handleFileSelect = async (fileHandle: FileSystemFileHandle) => {
-		const file = await fileHandle.getFile()
-		const fileContent = await file.text()
-		const fileName = file.name
-
-		const existingFileIndex = openedFiles.findIndex((f) => f.name === fileName)
-
-		if (existingFileIndex !== -1) {
-			setActiveFile(openedFiles[existingFileIndex])
-		} else {
-			const { projectFiles } = useFileSystemStore()
-			const existingFile = projectFiles.find((f) => f.name === fileName)
-
-			if (existingFile === undefined) return
-			existingFile.content = fileContent
-			setOpenedFiles([...openedFiles, existingFile as IFile])
-			setActiveFile(existingFile as IFile) // Set the newly added file as active
-		}
-	}
 
 	const handleCodeChange = (newValue: string) => {
 		if (activeFile === null) return
@@ -50,7 +20,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 		setActiveFile(updatedActiveFile)
 
 		const updatedFiles = openedFiles.map((file) =>
-			file.name === activeFile.name ? updatedActiveFile : file,
+			file.path === activeFile.path ? updatedActiveFile : file,
 		)
 		setOpenedFiles(updatedFiles)
 	}
@@ -67,7 +37,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 		setActiveFile(updatedActiveFile)
 
 		const updatedFiles = openedFiles.map((file) =>
-			file.name === activeFile.name ? updatedActiveFile : file,
+			file.path === activeFile.path ? updatedActiveFile : file,
 		)
 		setOpenedFiles(updatedFiles)
 	}
