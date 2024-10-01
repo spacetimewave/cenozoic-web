@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCredentialStore } from '../../services/AuthService'
 import {
@@ -14,22 +14,28 @@ import {
 	createFile,
 	moveItem,
 } from '../../services/FileSystemService'
+import { IFile, IFolder } from '../../interfaces/IFileSystem'
 
 const Sidebar = () => {
 	const navigate = useNavigate()
 	const { username, setUsername, setPassword } = useCredentialStore()
 	const { projectFiles } = useFileSystemStore()
 
-	const [contextMenu, setContextMenu] = useState(null)
-	const [selectedItem, setSelectedItem] = useState(null)
-	const [renamingItem, setRenamingItem] = useState(null)
-	const [renameInput, setRenameInput] = useState('')
-	const [newItemName, setNewItemName] = useState('') // State for new item name
-	const [newItemType, setNewItemType] = useState(null) // State for new item name
-	const [addingToPath, setAddingToPath] = useState(null) // State to track where to add a new item
-	const [draggedItem, setDraggedItem] = useState(null) // Track the dragged item
+	const [contextMenu, setContextMenu] = useState<{
+		top: number
+		left: number
+	} | null>(null)
+	const [selectedItem, setSelectedItem] = useState<IFile | IFolder | null>(null)
+	const [renamingItem, setRenamingItem] = useState<IFile | IFolder | null>(null)
+	const [renameInput, setRenameInput] = useState<string>('')
+	const [newItemName, setNewItemName] = useState<string>('') // State for new item name
+	const [newItemType, setNewItemType] = useState<'directory' | 'file' | null>(
+		null,
+	) // State for new item name
+	const [addingToPath, setAddingToPath] = useState<string | null>(null) // State to track where to add a new item
+	const [draggedItem, setDraggedItem] = useState<IFile | IFolder | null>(null) // Track the dragged item
 
-	useState(() => {}, projectFiles)
+	useEffect(() => {}, [projectFiles])
 
 	const handleSelectFolder = async () => {
 		await SelectProjectFolder()
@@ -41,7 +47,10 @@ const Sidebar = () => {
 		navigate('/login')
 	}
 
-	const handleContextMenu = (e, item) => {
+	const handleContextMenu = (
+		e: React.MouseEvent<HTMLDivElement>,
+		item: IFile | IFolder,
+	) => {
 		e.preventDefault()
 		setContextMenu({
 			top: e.clientY,
@@ -50,7 +59,10 @@ const Sidebar = () => {
 		setSelectedItem(item)
 	}
 
-	const handleMenuAction = (action) => {
+	const handleMenuAction = (action: string) => {
+		if (selectedItem === null) {
+			return
+		}
 		if (action === 'add-folder') {
 			setNewItemName('') // Reset new item name
 			setNewItemType('directory')
@@ -91,15 +103,22 @@ const Sidebar = () => {
 	}
 
 	// Drag-and-drop handlers
-	const handleDragStart = (e, item) => {
+	const handleDragStart = (
+		e: React.DragEvent<HTMLDivElement>,
+		item: IFile | IFolder,
+	) => {
+		console.log('drag start', e)
 		setDraggedItem(item) // Store the dragged item
 	}
 
-	const handleDragOver = (e) => {
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
 		e.preventDefault() // Allow dropping
 	}
 
-	const handleDrop = async (e, targetFolder) => {
+	const handleDrop = async (
+		e: React.DragEvent<HTMLDivElement>,
+		targetFolder: IFolder,
+	) => {
 		e.preventDefault()
 		e.stopPropagation()
 		if (draggedItem && draggedItem.path !== targetFolder.path) {
@@ -108,15 +127,15 @@ const Sidebar = () => {
 		}
 	}
 
-	const renderTree = (parentPath = null) => {
+	const renderTree = (parentPath: string | null = null) => {
 		const items = getChildren(parentPath)
 		return (
-			<ul className={parentPath === null ? '' : 'pl-2'}>
+			<div className={parentPath === null ? '' : 'pl-2'}>
 				{items?.map((item, index) => {
 					const isAddingNewItem = addingToPath === item.path
 					if (item.kind === 'directory') {
 						return (
-							<li
+							<div
 								key={index}
 								onDragOver={handleDragOver}
 								onDrop={(e) => handleDrop(e, item)} // Handle drop on folder
@@ -156,11 +175,11 @@ const Sidebar = () => {
 										autoFocus
 									/>
 								)}
-							</li>
+							</div>
 						)
 					} else {
 						return (
-							<li
+							<div
 								key={index}
 								onClick={() => openFile(item)}
 								onContextMenu={(e) => handleContextMenu(e, item)}
@@ -180,21 +199,18 @@ const Sidebar = () => {
 								) : (
 									<>📝 {item.name}</>
 								)}
-							</li>
+							</div>
 						)
 					}
 				})}
-			</ul>
+			</div>
 		)
 	}
 
 	return (
 		<div className='w-64 p-5 bg-zinc-800 text-white overflow-y-auto h-screen relative'>
 			<div className='flex items-center mb-6'>
-				<span
-					className='w-10 h-10 rounded-full mr-3 bg-slate-500'
-					alt='profile'
-				></span>
+				<span className='w-10 h-10 rounded-full mr-3 bg-slate-500'></span>
 				<div>
 					<h2 className='font-semibold text-lg'>{username}</h2>
 					<button

@@ -48,7 +48,7 @@ export interface IFile {
 	parentPath: string | null
 	kind: 'file'
 	handle: FileSystemFileHandle
-	content: string
+	content: string | null
 	isSaved: boolean
 	isOpen: boolean
 }

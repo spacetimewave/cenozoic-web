@@ -145,7 +145,7 @@ export const toggleFolder = (path: string) => {
 }
 
 // Function to get children of a directory (since it's now flat)
-export const getChildren = (parentPath: string): (IFile | IFolder)[] => {
+export const getChildren = (parentPath: string | null): (IFile | IFolder)[] => {
 	const { projectFiles } = useFileSystemStore.getState()
 	return projectFiles.filter((file) => file.parentPath === parentPath)
 }
