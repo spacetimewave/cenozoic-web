@@ -57,6 +57,7 @@ const FileManager = ({ selectedFile }: any | null) => {
 
 	const handleSave = async () => {
 		if (activeFile === null) return
+		if (activeFile.content === null) return
 
 		const writable = await activeFile.handle.createWritable()
 		await writable.write(activeFile.content)
