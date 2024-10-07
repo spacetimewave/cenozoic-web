@@ -3,6 +3,7 @@ import Editor from '../pages/Editor'
 import Layout from '../components/Layout'
 import ProtectedRoute from './ProtectedRoute'
 import Login from '../pages/Login'
+import Signup from '../pages/Signup'
 
 export const Routes = [
 	{
@@ -13,6 +14,11 @@ export const Routes = [
 	{
 		path: '/login',
 		element: <Login />,
+		errorElement: <Error />,
+	},
+	{
+		path: '/signup',
+		element: <Signup />,
 		errorElement: <Error />,
 	},
 	{

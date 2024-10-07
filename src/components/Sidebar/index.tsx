@@ -4,10 +4,14 @@ import FileExplorer from '../FileExplorer'
 
 const Sidebar = () => {
 	const navigate = useNavigate()
-	const { username, setUsername, setPassword } = useCredentialStore()
+	const { username, setUsermail, setToken, setUsername, setPassword } =
+		useCredentialStore()
 
 	const handleSignOut = async () => {
 		setUsername(null)
+		setUsermail(null)
+		setUsername(null)
+		setToken(null)
 		setPassword(null)
 		navigate('/login')
 	}
