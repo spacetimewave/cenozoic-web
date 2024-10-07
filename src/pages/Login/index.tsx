@@ -1,48 +1,21 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCredentialStore } from '../../services/AuthService'
+import { login } from '../../services/AuthService'
 
 const Login = () => {
 	const navigate = useNavigate()
-	const { setUsername, setUsermail, setPassword, setToken } =
-		useCredentialStore() // Add setToken
 
 	const [mail, setMailState] = useState<string>('')
 	const [password, setPasswordState] = useState<string>('')
 	const [error, setError] = useState<string>('') // Added error state
 
-	const handleSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (ev: React.FormEvent<HTMLFormElement>) => {
 		ev.preventDefault()
-		login(mail, password)
-	}
-
-	const login = async (usermail: string, password: string) => {
-		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				body: new URLSearchParams({
-					username: usermail,
-					password,
-				}).toString(),
-			})
-
-			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.message || 'Failed to log in')
-			}
-
-			// If login is successful
-			const data = await response.json()
-			setUsermail(usermail)
-			setUsername(data.user_name)
-			setPassword(password)
-			setToken(data.access_token)
+		const success = await login(mail, password)
+		if (success) {
 			navigate('/editor')
-		} catch (error) {
-			setError((error as Error).message)
+		} else {
+			setError('Failed to log in')
 		}
 	}
 

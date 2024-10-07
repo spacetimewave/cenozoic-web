@@ -1,50 +1,22 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCredentialStore } from '../../services/AuthService'
+import { signup } from '../../services/AuthService'
 
 const Signup = () => {
 	const navigate = useNavigate()
-	const { setUsername, setPassword, setUsermail, setToken } =
-		useCredentialStore()
 
 	const [username, setUsernameState] = useState<string>('')
 	const [email, setEmailState] = useState<string>('') // Added email state
 	const [password, setPasswordState] = useState<string>('')
 	const [error, setError] = useState<string>('') // Added error state
 
-	const handleSubmit = (ev: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (ev: React.FormEvent<HTMLFormElement>) => {
 		ev.preventDefault()
-		signup(username, email, password)
-	}
-
-	const signup = async (username: string, email: string, password: string) => {
-		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/signup`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					username,
-					email,
-					password,
-				}),
-			})
-
-			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.message || 'Failed to sign up')
-			}
-
-			// If signup is successful
-			const data = await response.json()
-			setUsername(username)
-			setUsermail(email)
-			setPassword(password)
-			setToken(data.access_token)
+		const success = await signup(username, email, password)
+		if (success) {
 			navigate('/editor')
-		} catch (error) {
-			setError((error as Error).message)
+		} else {
+			setError('Failed to sign up')
 		}
 	}
 
