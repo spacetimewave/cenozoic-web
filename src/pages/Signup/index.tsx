@@ -4,7 +4,8 @@ import { useCredentialStore } from '../../services/AuthService'
 
 const Signup = () => {
 	const navigate = useNavigate()
-	const { setUsername, setPassword, setUsermail } = useCredentialStore()
+	const { setUsername, setPassword, setUsermail, setToken } =
+		useCredentialStore()
 
 	const [username, setUsernameState] = useState<string>('')
 	const [email, setEmailState] = useState<string>('') // Added email state
@@ -36,9 +37,11 @@ const Signup = () => {
 			}
 
 			// If signup is successful
+			const data = await response.json()
 			setUsername(username)
 			setUsermail(email)
 			setPassword(password)
+			setToken(data.access_token)
 			navigate('/editor')
 		} catch (error) {
 			setError((error as Error).message)
