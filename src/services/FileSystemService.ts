@@ -42,7 +42,7 @@ export const SelectProjectFolder = async () => {
 export const ReadRootDirectory = async (
 	directoryHandle: FileSystemDirectoryHandle,
 ): Promise<(IFile | IFolder)[]> => {
-	let files: (IFile | IFolder)[] = []
+	const files: (IFile | IFolder)[] = []
 	const rootDirectory: IFolder = {
 		name: directoryHandle.name,
 		path: '/' + directoryHandle.name,

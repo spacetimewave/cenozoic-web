@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useContainerStore } from './ContainerService'
 
 export const useCredentialStore = create<IAuthStore>((set) => ({
 	username: null,
@@ -56,6 +57,7 @@ export const signup = async (
 		setToken(data.access_token)
 		return true
 	} catch (error) {
+		console.log(error)
 		return false
 	}
 }
@@ -89,6 +91,12 @@ export const login = async (
 		setToken(data.access_token)
 		return true
 	} catch (error) {
+		console.log(error)
 		return false
 	}
+}
+
+export const signout = async () => {
+	const { setContainers } = useContainerStore.getState()
+	setContainers([])
 }
