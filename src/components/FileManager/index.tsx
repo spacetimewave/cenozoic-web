@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
 import { useFileEditorStore } from '../../services/FileSystemService'
+import ContainerTerminal from '../ContainerTerminal'
 
 const FileManager = () => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
@@ -127,6 +128,9 @@ const FileManager = () => {
 					onChange={handleCodeChange}
 				/>
 			)}
+			<div className='mt-auto'>
+				<ContainerTerminal />
+			</div>
 
 			{isSaveModalOpen && closingTabIndex !== null && (
 				<SaveModal
