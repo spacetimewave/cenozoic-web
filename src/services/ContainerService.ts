@@ -4,7 +4,7 @@ export interface Container {
 	id: string
 	container_id: string
 	container_name: string
-	status: 'stopped' | 'running'
+	status: 'exited' | 'running' | 'created'
 	user_mail: string
 }
 
@@ -19,8 +19,8 @@ export const useContainerStore = create<IContainerStore>((set) => ({
 		set({ containers: newContainers }),
 }))
 
-export const StartNewContainer = async (token: string) => {
-	const url = `${import.meta.env.VITE_API_URL}/docker/start-container`
+export const CreateNewContainer = async (token: string) => {
+	const url = `${import.meta.env.VITE_API_URL}/docker/create-container`
 
 	try {
 		const response = await fetch(url, {
@@ -36,10 +36,14 @@ export const StartNewContainer = async (token: string) => {
 			throw new Error(errorMessage.detail || 'Error starting container')
 		}
 
-		await GetUserContainers(token)
-
 		const data = await response.json()
-		return data
+		return {
+			id: data.id,
+			container_id: data.container_id,
+			container_name: data.container_name,
+			user_mail: data.user_id,
+			status: data.status,
+		}
 	} catch (error) {
 		console.error('Error starting container:', error)
 		throw error
@@ -63,11 +67,88 @@ export const GetUserContainers = async (token: string) => {
 			throw new Error(errorMessage.detail || 'Error fetching containers')
 		}
 
-		const { setContainers } = useContainerStore.getState()
+		const data = await response.json()
+		return data.containers
+	} catch (error) {
+		console.error('Error fetching user containers:', error)
+		throw error
+	}
+}
+
+export const StartContainer = async (container_id: string, token: string) => {
+	const url = `${
+		import.meta.env.VITE_API_URL
+	}/docker/start-container/${container_id}`
+
+	try {
+		const response = await fetch(url, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error starting container')
+		}
 
 		const data = await response.json()
-		console.log(data.containers)
-		setContainers(data.containers)
+		return data
+	} catch (error) {
+		console.error('Error starting container:', error)
+		throw error
+	}
+}
+
+export const StopContainer = async (container_id: string, token: string) => {
+	const url = new URL(
+		`${import.meta.env.VITE_API_URL}/docker/stop-container/${container_id}`,
+	)
+
+	try {
+		const response = await fetch(url.toString(), {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error fetching containers')
+		}
+
+		const data = await response.json()
+		return data.containers
+	} catch (error) {
+		console.error('Error fetching user containers:', error)
+		throw error
+	}
+}
+
+export const DeleteContainer = async (container_id: string, token: string) => {
+	const url = new URL(
+		`${import.meta.env.VITE_API_URL}/docker/delete-container/${container_id}`,
+	)
+
+	try {
+		const response = await fetch(url.toString(), {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error fetching containers')
+		}
+
+		const data = await response.json()
 		return data.containers
 	} catch (error) {
 		console.error('Error fetching user containers:', error)
