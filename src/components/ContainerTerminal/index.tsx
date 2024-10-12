@@ -3,10 +3,14 @@ import { Terminal } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import 'xterm/css/xterm.css'
 
-const ContainerTerminal = () => {
+interface ContainerTerminalProps {
+	container_id: string
+}
+
+const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 	const xtermRef = useRef<HTMLDivElement | null>(null)
 	const terminalRef = useRef<Terminal | null>(null)
-
+	console.log(container_id)
 	useLayoutEffect(() => {
 		if (terminalRef.current) {
 			// Terminal is already initialized
@@ -50,10 +54,14 @@ const ContainerTerminal = () => {
 				}
 			},
 		)
-
 		return () => {
-			terminal.dispose()
-			terminalRef.current = null
+			if (terminalRef.current) {
+				if (typeof terminalRef.current === typeof Terminal) {
+					terminalRef.current.dispose()
+				}
+
+				terminalRef.current = null
+			}
 		}
 	}, [])
 

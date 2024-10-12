@@ -10,13 +10,18 @@ export interface Container {
 
 export interface IContainerStore {
 	containers: Container[]
+	containerTerminals: string[]
 	setContainers: (containers: Container[]) => void
+	setContainerTerminals: (containerTerminals: string[]) => void
 }
 
 export const useContainerStore = create<IContainerStore>((set) => ({
 	containers: [],
+	containerTerminals: [],
 	setContainers: (newContainers: Container[]) =>
 		set({ containers: newContainers }),
+	setContainerTerminals: (containerTerminals: string[]) =>
+		set({ containerTerminals: containerTerminals }),
 }))
 
 export const CreateNewContainer = async (token: string) => {
@@ -154,4 +159,10 @@ export const DeleteContainer = async (container_id: string, token: string) => {
 		console.error('Error fetching user containers:', error)
 		throw error
 	}
+}
+
+export const OpenTerminal = async (container_id: string, token: string) => {
+	const { containerTerminals, setContainerTerminals } =
+		useContainerStore.getState()
+	setContainerTerminals([...containerTerminals, container_id])
 }

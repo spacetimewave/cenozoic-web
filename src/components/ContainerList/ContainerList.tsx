@@ -7,6 +7,7 @@ import {
 	DeleteContainer,
 	useContainerStore,
 	StopContainer,
+	OpenTerminal,
 } from '../../services/ContainerService'
 
 interface ContainerManagerProps {
@@ -164,6 +165,28 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 													strokeLinejoin='round'
 													strokeWidth={2}
 													d='M6 18L18 6M6 6l12 12'
+												/>
+											</svg>
+										</button>
+
+										<button
+											onClick={() =>
+												OpenTerminal(container.container_id, token ?? '')
+											}
+											className='bg-gray-900 hover:bg-gray-800 text-white py-2 px-2 h-6 rounded text-xs flex items-center justify-center'
+										>
+											<svg
+												xmlns='http://www.w3.org/2000/svg'
+												fill='none'
+												viewBox='0 0 24 24'
+												stroke='currentColor'
+												className='w-4 h-4'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M4 17l6-6-6-6m8 14h8'
 												/>
 											</svg>
 										</button>

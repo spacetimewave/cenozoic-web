@@ -3,10 +3,12 @@ import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
 import { useFileEditorStore } from '../../services/FileSystemService'
 import ContainerTerminal from '../ContainerTerminal'
+import { useContainerStore } from '../../services/ContainerService'
 
 const FileManager = () => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
 		useFileEditorStore()
+	const { containerTerminals } = useContainerStore()
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false)
 	const [closingTabIndex, setClosingTabIndex] = useState<number | null>(null)
 
@@ -129,7 +131,9 @@ const FileManager = () => {
 				/>
 			)}
 			<div className='mt-auto'>
-				<ContainerTerminal />
+				{containerTerminals?.length === 0 ? null : (
+					<ContainerTerminal container_id={containerTerminals[0]} />
+				)}
 			</div>
 
 			{isSaveModalOpen && closingTabIndex !== null && (
