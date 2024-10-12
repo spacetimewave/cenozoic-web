@@ -90,7 +90,7 @@ const FileManager = () => {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [openedFiles, activeFile])
+	}, [openedFiles, activeFile, handleSave])
 
 	return (
 		<div className='flex flex-1 flex-col'>

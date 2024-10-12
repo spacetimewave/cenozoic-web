@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import 'xterm/css/xterm.css'
@@ -10,12 +10,15 @@ interface ContainerTerminalProps {
 const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 	const xtermRef = useRef<HTMLDivElement | null>(null)
 	const terminalRef = useRef<Terminal | null>(null)
-	console.log(container_id)
-	useLayoutEffect(() => {
-		if (terminalRef.current) {
-			// Terminal is already initialized
-			return
-		}
+	const socketRef = useRef<WebSocket | null>(null)
+
+	useEffect(() => {
+		console.log('Use effect', container_id)
+
+		// if (terminalRef.current) {
+		// 	// Terminal is already initialized
+		// 	return
+		// }
 
 		const terminal = new Terminal({
 			theme: {
@@ -32,6 +35,27 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 		fitAddon.fit()
 		fitAddon.proposeDimensions()
 
+		const socket = new WebSocket(
+			`ws://localhost:8000/docker-ws/${container_id}`,
+		)
+		socketRef.current = socket
+
+		socket.onopen = () => {
+			console.log('WebSocket connection established')
+		}
+
+		socket.onclose = () => {
+			console.log('WebSocket connection closed')
+		}
+
+		socket.onerror = (event) => {
+			console.error('WebSocket error:', event)
+		}
+
+		socket.onmessage = (event) => {
+			terminal.write(event.data)
+		}
+
 		// Simulate a command execution
 		terminal.write('$ ')
 
@@ -44,26 +68,33 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 					!domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey
 				if (key === '\r') {
 					terminal.write('\r\n$ ')
+					socket.send('\r')
 				} else if (domEvent.key === 'Backspace') {
 					const cursorX = terminal.buffer.active.cursorX
 					if (cursorX > 2) {
 						terminal.write('\b \b')
+						socket.send('\b')
 					}
 				} else if (printable) {
 					terminal.write(key)
+					socket.send(key)
 				}
 			},
 		)
 		return () => {
+			console.log('Cleanup')
 			if (terminalRef.current) {
-				if (typeof terminalRef.current === typeof Terminal) {
-					terminalRef.current.dispose()
-				}
-
+				// terminalRef.current?.dispose()
 				terminalRef.current = null
+				console.log('Terminal disposed')
+			}
+			if (socketRef.current) {
+				socketRef.current.close()
+				socketRef.current = null
+				console.log('Socket disposed')
 			}
 		}
-	}, [])
+	}, [container_id])
 
 	return (
 		<div
