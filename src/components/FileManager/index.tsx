@@ -8,7 +8,7 @@ import { useContainerStore } from '../../services/ContainerService'
 const FileManager = () => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
 		useFileEditorStore()
-	const { containerTerminals } = useContainerStore()
+	const { containerTerminals, setContainerTerminals } = useContainerStore()
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false)
 	const [closingTabIndex, setClosingTabIndex] = useState<number | null>(null)
 
@@ -132,7 +132,7 @@ const FileManager = () => {
 			)}
 			<div className='mt-auto'>
 				{containerTerminals?.length === 0 ? null : (
-					<ContainerTerminal container_id={containerTerminals[0]} />
+					<ContainerTerminal container_id={containerTerminals[0]} onCloseTerminal={()=>{setContainerTerminals([])}} />
 				)}
 			</div>
 

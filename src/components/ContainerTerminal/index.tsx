@@ -2,12 +2,14 @@ import { useRef, useEffect, useState } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import 'xterm/css/xterm.css'
+import './index.css'
 
 interface ContainerTerminalProps {
 	container_id: string
+	onCloseTerminal: () => void
 }
 
-const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
+const ContainerTerminal = ({ container_id, onCloseTerminal }: ContainerTerminalProps) => {
 	const xtermRef = useRef<HTMLDivElement | null>(null)
 	const [terminal, setTerminal] = useState<Terminal | null>(null)
 	const [socket, setSocket] = useState<WebSocket | null>(null)
@@ -15,19 +17,20 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 
 	useEffect(() => {
 		console.log('Initializing terminal with container-id=', container_id)
-		setTerminal(new Terminal({
-			theme: {
-				background: '#1E1E1E',
-				foreground: '#D4D4D4',
-			},
-		}))
-		setSocket(new WebSocket(
-			`ws://localhost:8000/docker-ws/${container_id}`,
-		))
+		setTerminal(
+			new Terminal({
+				theme: {
+					background: '#1E1E1E',
+					foreground: '#D4D4D4',
+				},
+				
+			}),
+		)
+		setSocket(new WebSocket(`ws://localhost:8000/docker-ws/${container_id}`))
 	}, [container_id])
 
 	useEffect(() => {
-		if (terminal === null || socket === null) {
+		if (terminal === null || socket === null || xtermRef.current === null) {
 			return
 		}
 
@@ -67,8 +70,8 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 				if (key === '\r') {
 					terminal.write('\r\n ')
 					console.log('Sending: ', commandRef.current)
-                    socket.send(commandRef.current + '\r')
-                    commandRef.current = ''
+					socket.send(commandRef.current + '\r')
+					commandRef.current = ''
 				} else if (domEvent.key === 'Backspace') {
 					const cursorX = terminal.buffer.active.cursorX
 					if (cursorX > 2) {
@@ -77,7 +80,7 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 					}
 				} else if (printable) {
 					terminal.write(key)
-                    commandRef.current += key
+					commandRef.current += key
 				}
 			},
 		)
@@ -85,24 +88,61 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 			console.log('Cleanup')
 			if (terminal) {
 				terminal?.dispose()
-				
+
 				console.log('Terminal disposed')
 			}
 			if (socket) {
 				socket.close()
-				
+
 				console.log('Socket disposed')
 			}
-			setTerminal(null) 
-			setSocket(null) 
+			setTerminal(null)
+			setSocket(null)
 		}
 	}, [terminal, socket])
 
+	const killTerminal = () => {
+        if (terminal) {
+            terminal.dispose()
+        }
+        if (socket) {
+            socket.close()
+            console.log('Socket disposed')
+        }
+        setTerminal(null)
+        setSocket(null)
+		onCloseTerminal()
+    }
+
 	return (
-		<div
-			ref={xtermRef}
-			style={{ height: '225px', width: '100%', marginTop: 'auto' }}
-		></div>
+		<div style={{ height: '267px', width: '100%', marginTop: 'auto', backgroundColor:'#1e1e1e'}}>
+			<div className='bg-slate-300 pl-2 p-1 pb-2 w-full mt-auto flex items-center'>
+				<button
+					onClick={killTerminal}
+					className='bg-slate-500 hover:bg-slate-700 text-white py-2 px-2 h-6 rounded text-xs flex items-center justify-center'
+				>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						fill='none'
+						viewBox='0 0 24 24'
+						stroke='currentColor'
+						className='w-4 h-4'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							strokeWidth={2}
+							d='M6 18L18 6M6 6l12 12'
+						/>
+					</svg>
+				</button>
+				<span className='ml-2'>container: {container_id}</span>
+			</div>
+			<div
+				ref={xtermRef}
+				style={{ height: '225px', width: '100%', marginTop: 'auto', marginBlockStart: '10px', marginBlockEnd: '10px', overflowY: 'hidden'}}
+			></div>
+		</div>
 	)
 }
 

@@ -1,0 +1,6 @@
+.xterm-viewport {
+    scrollbar-width: none !important; /* For Firefox */
+}
+.xterm-viewport::-webkit-scrollbar {
+    display: none !important; /* For Chrome, Safari, and Opera */
+}
