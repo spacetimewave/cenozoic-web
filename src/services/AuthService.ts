@@ -1,16 +1,35 @@
 import { create } from 'zustand'
 import { useContainerStore } from './ContainerService'
+import { persist } from 'zustand/middleware'
 
-export const useCredentialStore = create<IAuthStore>((set) => ({
-	username: null,
-	usermail: null,
-	password: null,
-	token: null,
-	setUsername: (key: string | null) => set({ username: key }),
-	setUsermail: (key: string | null) => set({ usermail: key }),
-	setPassword: (key: string | null) => set({ password: key }),
-	setToken: (key: string | null) => set({ token: key }),
-}))
+export const useCredentialStore = create(
+	persist<IAuthStore>(
+		(set) => ({
+			username: null,
+			usermail: null,
+			password: null,
+			token: null,
+			setUsername: (key: string | null) => set({ username: key }),
+			setUsermail: (key: string | null) => set({ usermail: key }),
+			setPassword: (key: string | null) => set({ password: key }),
+			setToken: (key: string | null) => set({ token: key }),
+		}),
+		{
+			name: 'cenozoic-auth', // name of the item in the storage
+		},
+	),
+)
+
+// export const useCredentialStore = create<IAuthStore>((set) => ({
+// 	username: null,
+// 	usermail: null,
+// 	password: null,
+// 	token: null,
+// 	setUsername: (key: string | null) => set({ username: key }),
+// 	setUsermail: (key: string | null) => set({ usermail: key }),
+// 	setPassword: (key: string | null) => set({ password: key }),
+// 	setToken: (key: string | null) => set({ token: key }),
+// }))
 
 export interface IAuthStore {
 	username: string | null
