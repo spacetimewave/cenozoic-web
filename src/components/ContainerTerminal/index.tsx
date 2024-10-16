@@ -11,6 +11,7 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 	const xtermRef = useRef<HTMLDivElement | null>(null)
 	const [terminal, setTerminal] = useState<Terminal | null>(null)
 	const [socket, setSocket] = useState<WebSocket | null>(null)
+	const commandRef = useRef<string>('')
 
 	useEffect(() => {
 		console.log('Initializing terminal with container-id=', container_id)
@@ -51,31 +52,32 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 		}
 
 		socket.onmessage = (event) => {
+			console.log('WebSocket message:', event.data)
 			terminal.write(event.data)
 		}
 
 		// Simulate a command execution
-		terminal.write('$ ')
+		// terminal.write('$ ')
 
 		// Listen for key events
 		terminal.onKey(
 			({ key, domEvent }: { key: string; domEvent: KeyboardEvent }) => {
-				console.log(domEvent)
-				console.log(key)
 				const printable =
 					!domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey
 				if (key === '\r') {
-					terminal.write('\r\n$ ')
-					socket.send('\r')
+					terminal.write('\r\n ')
+					console.log('Sending: ', commandRef.current)
+                    socket.send(commandRef.current + '\r')
+                    commandRef.current = ''
 				} else if (domEvent.key === 'Backspace') {
 					const cursorX = terminal.buffer.active.cursorX
 					if (cursorX > 2) {
 						terminal.write('\b \b')
-						socket.send('\b')
+						commandRef.current = commandRef.current.slice(0, -1)
 					}
 				} else if (printable) {
 					terminal.write(key)
-					socket.send(key)
+                    commandRef.current += key
 				}
 			},
 		)
