@@ -12,7 +12,7 @@
 	},
 	"dependencies": {
 		"@xterm/addon-fit": "^0.10.0",
-		"monaco-editor": "^0.50.0",
+		"monaco-editor": "^0.52.0",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-monaco-editor": "^0.56.1",
@@ -36,5 +36,8 @@
 		"typescript": "5.5.2",
 		"typescript-eslint": "^8.0.1",
 		"vite": "^5.4.1"
+	},
+	"volta": {
+		"node": "18.20.4"
 	}
 }

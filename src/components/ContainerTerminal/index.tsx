@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import 'xterm/css/xterm.css'
@@ -9,36 +9,34 @@ interface ContainerTerminalProps {
 
 const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 	const xtermRef = useRef<HTMLDivElement | null>(null)
-	const terminalRef = useRef<Terminal | null>(null)
-	const socketRef = useRef<WebSocket | null>(null)
+	const [terminal, setTerminal] = useState<Terminal | null>(null)
+	const [socket, setSocket] = useState<WebSocket | null>(null)
 
 	useEffect(() => {
-		console.log('Use effect', container_id)
-
-		// if (terminalRef.current) {
-		// 	// Terminal is already initialized
-		// 	return
-		// }
-
-		const terminal = new Terminal({
+		console.log('Initializing terminal with container-id=', container_id)
+		setTerminal(new Terminal({
 			theme: {
 				background: '#1E1E1E',
 				foreground: '#D4D4D4',
 			},
-		})
-		terminalRef.current = terminal
+		}))
+		setSocket(new WebSocket(
+			`ws://localhost:8000/docker-ws/${container_id}`,
+		))
+	}, [container_id])
+
+	useEffect(() => {
+		if (terminal === null || socket === null) {
+			return
+		}
+
+		console.log('Starting terminal')
 
 		const fitAddon = new FitAddon()
-
 		terminal.loadAddon(fitAddon)
 		terminal.open(xtermRef.current!)
 		fitAddon.fit()
 		fitAddon.proposeDimensions()
-
-		const socket = new WebSocket(
-			`ws://localhost:8000/docker-ws/${container_id}`,
-		)
-		socketRef.current = socket
 
 		socket.onopen = () => {
 			console.log('WebSocket connection established')
@@ -83,18 +81,20 @@ const ContainerTerminal = ({ container_id }: ContainerTerminalProps) => {
 		)
 		return () => {
 			console.log('Cleanup')
-			if (terminalRef.current) {
-				// terminalRef.current?.dispose()
-				terminalRef.current = null
+			if (terminal) {
+				terminal?.dispose()
+				
 				console.log('Terminal disposed')
 			}
-			if (socketRef.current) {
-				socketRef.current.close()
-				socketRef.current = null
+			if (socket) {
+				socket.close()
+				
 				console.log('Socket disposed')
 			}
+			setTerminal(null) 
+			setSocket(null) 
 		}
-	}, [container_id])
+	}, [terminal, socket])
 
 	return (
 		<div
