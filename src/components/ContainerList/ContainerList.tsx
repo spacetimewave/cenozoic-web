@@ -39,7 +39,8 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 	const [openContainerId, setOpenContainerId] = useState<string | null>(null) // Track open containers
 	const [isRunningModalVisible, setIsRunningModalVisible] = useState(false)
 	const [isTerminalModalVisible, setIsTerminalModalVisible] = useState(false)
-	const [isMaxContainersModalVisible, setIsMaxContainersModalVisible] = useState(false)
+	const [isMaxContainersModalVisible, setIsMaxContainersModalVisible] =
+		useState(false)
 	useEffect(() => {
 		const fetchContainers = async () => {
 			try {
@@ -54,7 +55,7 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 
 	const handleAddNewContainer = async () => {
 		try {
-			if(containers.length >= 3) {
+			if (containers.length >= 3) {
 				setIsMaxContainersModalVisible(true)
 				return
 			}
@@ -237,14 +238,16 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 									</div>
 
 									<div className='flex justify-center mt-4'>
-										<button
-											onClick={() => toggleContainer(container.id)}
-											className='bg-gradient-to-r from-slate-400 to-slate-500 hover:from-slate-500 hover:to-slate-600 text-white py-1 px-3 rounded-full shadow-sm duration-300 ease-in-out transform text-xs'
-										>
-											{openContainerId === container.id
-												? 'Hide Options'
-												: 'Show Options'}
-										</button>
+										{container.status === 'running' && (
+											<button
+												onClick={() => toggleContainer(container.id)}
+												className='bg-gradient-to-r from-slate-400 to-slate-500 hover:from-slate-500 hover:to-slate-600 text-white py-1 px-3 rounded-full shadow-sm duration-300 ease-in-out transform text-xs'
+											>
+												{openContainerId === container.id
+													? 'Hide Options'
+													: 'Show Options'}
+											</button>
+										)}
 									</div>
 									{openContainerId === container.id && (
 										<div className='mt-3'>
