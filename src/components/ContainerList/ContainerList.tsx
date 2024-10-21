@@ -39,6 +39,7 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 	const [openContainerId, setOpenContainerId] = useState<string | null>(null) // Track open containers
 	const [isRunningModalVisible, setIsRunningModalVisible] = useState(false)
 	const [isTerminalModalVisible, setIsTerminalModalVisible] = useState(false)
+	const [isMaxContainersModalVisible, setIsMaxContainersModalVisible] = useState(false)
 	useEffect(() => {
 		const fetchContainers = async () => {
 			try {
@@ -53,6 +54,10 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 
 	const handleAddNewContainer = async () => {
 		try {
+			if(containers.length >= 3) {
+				setIsMaxContainersModalVisible(true)
+				return
+			}
 			const newContainer = await CreateNewContainer(token ?? '')
 			console.log(newContainer)
 			setContainers([...containers, newContainer])
@@ -265,6 +270,12 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 				<Modal
 					message='There is already a container terminal opened. You can only use one terminal at a time.'
 					onClose={() => setIsTerminalModalVisible(false)}
+				/>
+			)}
+			{isMaxContainersModalVisible && (
+				<Modal
+					message='You can only create three containers, remove one container to create a new one.'
+					onClose={() => setIsMaxContainersModalVisible(false)}
 				/>
 			)}
 		</div>
