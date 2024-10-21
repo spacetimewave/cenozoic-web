@@ -14,21 +14,31 @@ interface ContainerManagerProps {
 	token: string | null
 }
 
-const Modal = ({ message, onClose } : {message:string, onClose:() => void}) => (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white p-4 rounded shadow-lg">
-            <p className='text-black'>{message}</p>
-            <button onClick={onClose} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Close
-            </button>
-        </div>
-    </div>
-);
+const Modal = ({
+	message,
+	onClose,
+}: {
+	message: string
+	onClose: () => void
+}) => (
+	<div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50'>
+		<div className='bg-white p-4 rounded shadow-lg'>
+			<p className='text-black'>{message}</p>
+			<button
+				onClick={onClose}
+				className='mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
+			>
+				Close
+			</button>
+		</div>
+	</div>
+)
 
 const ContainerList = ({ token }: ContainerManagerProps) => {
-	const { containers, setContainers } = useContainerStore()
+	const { containers, setContainers, containerTerminals } = useContainerStore()
 	const [openContainerId, setOpenContainerId] = useState<string | null>(null) // Track open containers
-	const [isModalVisible, setIsModalVisible] = useState(false);
+	const [isRunningModalVisible, setIsRunningModalVisible] = useState(false)
+	const [isTerminalModalVisible, setIsTerminalModalVisible] = useState(false)
 	useEffect(() => {
 		const fetchContainers = async () => {
 			try {
@@ -62,9 +72,9 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 
 	const handleStartContainer = async (containerId: string) => {
 		try {
-			if (containers.some(container => container.status === 'running')) {
-				setIsModalVisible(true);
-				return;
+			if (containers.some((container) => container.status === 'running')) {
+				setIsRunningModalVisible(true)
+				return
 			}
 			await StartContainer(containerId, token ?? '')
 			setContainers(await GetUserContainers(token ?? ''))
@@ -83,6 +93,17 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 			)
 		} catch (error) {
 			console.error('Error deleting container:', error)
+		}
+	}
+
+	const handleOpenTerminal = async (containerId: string) => {
+		try {
+			if (containerTerminals.length > 0) {
+				setIsTerminalModalVisible(true)
+			}
+			OpenTerminal(containerId)
+		} catch (error) {
+			console.error('Error opening a container terminal:', error)
 		}
 	}
 
@@ -185,11 +206,11 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 										</button>
 
 										<button
-											onClick={() =>
-												OpenTerminal(container.container_id, token ?? '')
-											}
+											onClick={() => handleOpenTerminal(container.container_id)}
 											className={`${
-												container.status !== 'running' ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-900 hover:bg-gray-800'
+												container.status !== 'running'
+													? 'bg-gray-500 cursor-not-allowed'
+													: 'bg-gray-900 hover:bg-gray-800'
 											} text-white py-2 px-2 h-6 rounded text-xs flex items-center justify-center`}
 											disabled={container.status !== 'running'}
 										>
@@ -234,12 +255,18 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 				</ul>
 			</div>
 
-			{isModalVisible && (
-            <Modal
-                message="There is already a container started. You can only use one container at a time."
-                onClose={() => setIsModalVisible(false)}
-            />
-        )}
+			{isRunningModalVisible && (
+				<Modal
+					message='There is already a container started. You can only use one container at a time.'
+					onClose={() => setIsRunningModalVisible(false)}
+				/>
+			)}
+			{isTerminalModalVisible && (
+				<Modal
+					message='There is already a container terminal opened. You can only use one terminal at a time.'
+					onClose={() => setIsTerminalModalVisible(false)}
+				/>
+			)}
 		</div>
 	)
 }

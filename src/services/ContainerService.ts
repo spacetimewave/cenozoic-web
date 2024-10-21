@@ -161,7 +161,7 @@ export const DeleteContainer = async (container_id: string, token: string) => {
 	}
 }
 
-export const OpenTerminal = async (container_id: string, token: string) => {
+export const OpenTerminal = async (container_id: string) => {
 	const { containerTerminals, setContainerTerminals } =
 		useContainerStore.getState()
 	setContainerTerminals([...containerTerminals, container_id])
