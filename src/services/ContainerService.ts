@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { IFile, IFolder } from '../interfaces/IFileSystem'
 import { useFileEditorStore } from './FileSystemService'
+import { useCredentialStore } from './AuthService'
 
 export interface Container {
 	id: string
@@ -257,6 +258,7 @@ export const toggleFolder = (container_id: string, path: string) => {
 export const openFile = async (container_id: string, path: string) => {
 	const { openedFiles, setOpenedFiles, setActiveFile } =
 		useFileEditorStore.getState()
+	const { token } = useCredentialStore.getState()
 
 	// Check if the file is already open
 	console.log(getContainerFiles(container_id))
@@ -273,7 +275,11 @@ export const openFile = async (container_id: string, path: string) => {
 			parentPath: file.parentPath,
 			kind: file.kind,
 			handle: file.handle,
-			content: 'HOLA.txt',
+			content: await GetContainerFileContent(
+				container_id,
+				file.path,
+				token ?? '',
+			),
 			isSaved: true,
 			isOpen: true,
 		}
@@ -282,5 +288,39 @@ export const openFile = async (container_id: string, path: string) => {
 		setActiveFile(newFile)
 	} else {
 		setActiveFile(openedFile)
+	}
+}
+
+export const GetContainerFileContent = async (
+	container_id: string,
+	file_path: string,
+	token: string,
+): Promise<string> => {
+	const url = new URL(
+		`${
+			import.meta.env.VITE_API_URL
+		}/docker/file-content/${container_id}?file_path=${file_path}`,
+	)
+
+	try {
+		const response = await fetch(url.toString(), {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error fetching container files')
+		}
+
+		const data = await response.json()
+		console.log('FILE CONTENT', data)
+		return data
+	} catch (error) {
+		console.error('Error fetching container files:', error)
+		throw error
 	}
 }
