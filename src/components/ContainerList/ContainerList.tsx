@@ -173,7 +173,10 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 											onClick={() =>
 												OpenTerminal(container.container_id, token ?? '')
 											}
-											className='bg-gray-900 hover:bg-gray-800 text-white py-2 px-2 h-6 rounded text-xs flex items-center justify-center'
+											className={`${
+												container.status !== 'running' ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-900 hover:bg-gray-800'
+											} text-white py-2 px-2 h-6 rounded text-xs flex items-center justify-center`}
+											disabled={container.status !== 'running'}
 										>
 											<svg
 												xmlns='http://www.w3.org/2000/svg'
