@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { IFile, IFolder } from '../interfaces/IFileSystem'
 
 export interface Container {
 	id: string
@@ -6,6 +7,7 @@ export interface Container {
 	container_name: string
 	status: 'exited' | 'running' | 'created'
 	user_mail: string
+	container_files?: (IFile | IFolder)[]
 }
 
 export interface IContainerStore {
