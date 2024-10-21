@@ -14,10 +14,21 @@ interface ContainerManagerProps {
 	token: string | null
 }
 
+const Modal = ({ message, onClose } : {message:string, onClose:() => void}) => (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white p-4 rounded shadow-lg">
+            <p className='text-black'>{message}</p>
+            <button onClick={onClose} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Close
+            </button>
+        </div>
+    </div>
+);
+
 const ContainerList = ({ token }: ContainerManagerProps) => {
 	const { containers, setContainers } = useContainerStore()
 	const [openContainerId, setOpenContainerId] = useState<string | null>(null) // Track open containers
-
+	const [isModalVisible, setIsModalVisible] = useState(false);
 	useEffect(() => {
 		const fetchContainers = async () => {
 			try {
@@ -51,6 +62,10 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 
 	const handleStartContainer = async (containerId: string) => {
 		try {
+			if (containers.some(container => container.status === 'running')) {
+				setIsModalVisible(true);
+				return;
+			}
 			await StartContainer(containerId, token ?? '')
 			setContainers(await GetUserContainers(token ?? ''))
 		} catch (error) {
@@ -218,6 +233,13 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 					)}
 				</ul>
 			</div>
+
+			{isModalVisible && (
+            <Modal
+                message="There is already a container started. You can only use one container at a time."
+                onClose={() => setIsModalVisible(false)}
+            />
+        )}
 		</div>
 	)
 }
