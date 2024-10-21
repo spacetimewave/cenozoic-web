@@ -166,7 +166,7 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 						return (
 							<div
 								key={index}
-								onClick={() => openFile(container.container_id, item.path)}
+								onClick={async () => await openFile(container.container_id, item.path)}
 								onContextMenu={(e) => handleContextMenu(e, item)}
 								className='cursor-pointer'
 								draggable // Make file draggable

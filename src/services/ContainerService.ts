@@ -284,7 +284,7 @@ export const openFile = async (container_id: string, path: string) => {
 			isOpen: true,
 		}
 
-		setOpenedFiles([...openedFiles, file]) // Push the new file
+		setOpenedFiles([...openedFiles, newFile]) // Push the new file
 		setActiveFile(newFile)
 	} else {
 		setActiveFile(openedFile)
