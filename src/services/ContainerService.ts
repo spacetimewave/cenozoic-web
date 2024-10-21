@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { IFile, IFolder } from '../interfaces/IFileSystem'
+import { useFileEditorStore } from './FileSystemService'
 
 export interface Container {
 	id: string
@@ -15,6 +16,10 @@ export interface IContainerStore {
 	containerTerminals: string[]
 	setContainers: (containers: Container[]) => void
 	setContainerTerminals: (containerTerminals: string[]) => void
+	setContainerFiles: (
+		containerId: string,
+		containerFiles: (IFile | IFolder)[],
+	) => void
 }
 
 export const useContainerStore = create<IContainerStore>((set) => ({
@@ -24,6 +29,17 @@ export const useContainerStore = create<IContainerStore>((set) => ({
 		set({ containers: newContainers }),
 	setContainerTerminals: (containerTerminals: string[]) =>
 		set({ containerTerminals: containerTerminals }),
+	setContainerFiles: (
+		containerId: string,
+		containerFiles: (IFile | IFolder)[],
+	) =>
+		set((state) => ({
+			containers: state.containers.map((container) =>
+				container.container_id === containerId
+					? { ...container, container_files: containerFiles }
+					: container,
+			),
+		})),
 }))
 
 export const CreateNewContainer = async (token: string) => {
@@ -167,4 +183,104 @@ export const OpenTerminal = async (container_id: string) => {
 	const { containerTerminals, setContainerTerminals } =
 		useContainerStore.getState()
 	setContainerTerminals([...containerTerminals, container_id])
+}
+
+export const GetContainerFiles = async (
+	container_id: string,
+	token: string,
+): Promise<(IFile | IFolder)[]> => {
+	const url = new URL(
+		`${import.meta.env.VITE_API_URL}/docker/filesystem/${container_id}`,
+	)
+
+	try {
+		const response = await fetch(url.toString(), {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error fetching container files')
+		}
+
+		const data = await response.json()
+		return data.map((item: IFile | IFolder) => item)
+	} catch (error) {
+		console.error('Error fetching container files:', error)
+		throw error
+	}
+}
+
+export const getContainerByContainerId = (
+	container_id: string,
+): Container | undefined => {
+	const { containers } = useContainerStore.getState()
+	return containers.find((container) => container.container_id === container_id)
+}
+
+export const getContainerFiles = (
+	container_id: string,
+): (IFile | IFolder)[] => {
+	const containerFiles =
+		getContainerByContainerId(container_id)?.container_files
+
+	if (!containerFiles) return []
+	return containerFiles
+}
+
+export const getFolderChildren = (
+	container_id: string,
+	parentPath: string | null,
+): (IFile | IFolder)[] => {
+	const containerFiles = getContainerFiles(container_id)
+	return containerFiles.filter((file) => file.parentPath === parentPath)
+}
+
+export const toggleFolder = (container_id: string, path: string) => {
+	const { setContainerFiles } = useContainerStore.getState()
+	const containerFiles = getContainerFiles(container_id)
+
+	// Toggle the folder state
+	const updatedFiles = containerFiles.map((file) => {
+		if (file.path === path && file.kind === 'directory') {
+			return { ...file, isOpen: !file.isOpen }
+		}
+		return file
+	})
+	setContainerFiles(container_id, updatedFiles)
+}
+
+export const openFile = async (container_id: string, path: string) => {
+	const { openedFiles, setOpenedFiles, setActiveFile } =
+		useFileEditorStore.getState()
+
+	// Check if the file is already open
+	console.log(getContainerFiles(container_id))
+	const file = getContainerFiles(container_id).find(
+		(file) => file.path === path && file.kind === 'file',
+	) as IFile
+	const openedFile = openedFiles?.find((file) => file.path === path)
+	console.log(file)
+	console.log(openedFile)
+	if (!openedFile) {
+		const newFile = {
+			name: file.name,
+			path: file.path,
+			parentPath: file.parentPath,
+			kind: file.kind,
+			handle: file.handle,
+			content: 'HOLA.txt',
+			isSaved: true,
+			isOpen: true,
+		}
+
+		setOpenedFiles([...openedFiles, file]) // Push the new file
+		setActiveFile(newFile)
+	} else {
+		setActiveFile(openedFile)
+	}
 }

@@ -7,6 +7,7 @@ import {
 	useContainerStore,
 	StopContainer,
 	OpenTerminal,
+	GetContainerFiles,
 } from '../../services/ContainerService'
 import ContainerFileExplorer from '../ContainerFileExplorer'
 
@@ -35,7 +36,7 @@ const Modal = ({
 )
 
 const ContainerList = ({ token }: ContainerManagerProps) => {
-	const { containers, setContainers, containerTerminals } = useContainerStore()
+	const { containers, setContainers, containerTerminals, setContainerFiles } = useContainerStore()
 	const [openedContainerDetails, setOpenedContainerDetails] = useState<string[]>([]) // Track open containers
 	const [isRunningModalVisible, setIsRunningModalVisible] = useState(false)
 	const [isTerminalModalVisible, setIsTerminalModalVisible] = useState(false)
@@ -113,10 +114,12 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 		}
 	}
 
-	const showContainerFiles = (containerId: string) => {
+	const showContainerFiles = async (containerId: string) => {
 		if(openedContainerDetails.includes(containerId)) { 
 			setOpenedContainerDetails(openedContainerDetails.filter((id) => id !== containerId))
 		} else {
+			const containerFiles = await GetContainerFiles(containerId, token ?? '')
+			setContainerFiles(containerId, containerFiles)
 			setOpenedContainerDetails([...openedContainerDetails, containerId])
 		}
 
@@ -245,17 +248,17 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 										<>
 											<div className='flex justify-center mt-4'>
 												<button
-													onClick={() => showContainerFiles(container.id)}
+													onClick={() => showContainerFiles(container.container_id)}
 													className='bg-gradient-to-r from-slate-400 to-slate-500 hover:from-slate-500 hover:to-slate-600 text-white py-1 px-3 rounded-full shadow-sm duration-300 ease-in-out transform text-xs'
 												>
-													{openedContainerDetails.includes(container.id)
+													{openedContainerDetails.includes(container.container_id)
 														? 'Hide Options'
 														: 'Show Options'}
 												</button>
 											</div>
-											{openedContainerDetails.includes(container.id) && (
+											{openedContainerDetails.includes(container.container_id) && (
 												<div className='mt-3'>
-													<ContainerFileExplorer />
+													<ContainerFileExplorer container={container} token={token} />
 												</div>
 											)}
 										</>

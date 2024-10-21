@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
-	SelectProjectFolder,
-	useFileSystemStore,
-	toggleFolder,
-	openFile,
-	getChildren,
+	
 	deleteFolder,
 	deleteFile,
 	renameItem,
@@ -13,10 +9,15 @@ import {
 	moveItem,
 } from '../../services/FileSystemService'
 import { IFile, IFolder } from '../../interfaces/IFileSystem'
+import {Container, getFolderChildren, toggleFolder, openFile} from '../../services/ContainerService'
 
-const ContainerFileExplorer = () => {
-	const { projectFiles } = useFileSystemStore()
 
+interface ContainerFilesProps {
+	container: Container,
+	token: string | null
+}
+
+const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 	const [contextMenu, setContextMenu] = useState<{
 		top: number
 		left: number
@@ -30,12 +31,6 @@ const ContainerFileExplorer = () => {
 	) // State for new item name
 	const [addingToPath, setAddingToPath] = useState<string | null>(null) // State to track where to add a new item
 	const [draggedItem, setDraggedItem] = useState<IFile | IFolder | null>(null) // Track the dragged item
-
-	useEffect(() => {}, [projectFiles])
-
-	const handleSelectFolder = async () => {
-		await SelectProjectFolder()
-	}
 
 	const handleContextMenu = (
 		e: React.MouseEvent<HTMLDivElement>,
@@ -118,7 +113,7 @@ const ContainerFileExplorer = () => {
 	}
 
 	const renderTree = (parentPath: string | null = null) => {
-		const items = getChildren(parentPath)
+		const items = getFolderChildren(container.container_id, parentPath)
 		return (
 			<div className={parentPath === null ? '' : 'pl-2'}>
 				{items?.map((item, index) => {
@@ -132,7 +127,7 @@ const ContainerFileExplorer = () => {
 							>
 								<div
 									className='cursor-pointer'
-									onClick={() => toggleFolder(item.path)}
+									onClick={() => toggleFolder(container.container_id, item.path)}
 									onContextMenu={(e) => handleContextMenu(e, item)}
 									draggable // Make folder draggable
 									onDragStart={(e) => handleDragStart(e, item)} // Handle drag start
@@ -171,7 +166,7 @@ const ContainerFileExplorer = () => {
 						return (
 							<div
 								key={index}
-								onClick={() => openFile(item)}
+								onClick={() => openFile(container.container_id, item.path)}
 								onContextMenu={(e) => handleContextMenu(e, item)}
 								className='cursor-pointer'
 								draggable // Make file draggable
@@ -199,13 +194,6 @@ const ContainerFileExplorer = () => {
 
 	return (
 		<>
-			<button
-				onClick={handleSelectFolder}
-				className='bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mb-4'
-			>
-				Select Folder
-			</button>
-
 			<div>{renderTree()}</div>
 
 			{contextMenu && (
