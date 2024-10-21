@@ -51,6 +51,7 @@ export interface IFile {
 	content: string | null
 	isSaved: boolean
 	isOpen: boolean
+	containerId: string | null
 }
 
 export interface IFolder {
@@ -62,6 +63,7 @@ export interface IFolder {
 	content: null
 	isSaved: boolean
 	isOpen: boolean
+	containerId: string | null
 }
 
 export interface IFileSystemStore {

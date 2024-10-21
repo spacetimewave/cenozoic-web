@@ -3,7 +3,7 @@ import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
 import { useFileEditorStore } from '../../services/FileSystemService'
 import ContainerTerminal from '../ContainerTerminal'
-import { useContainerStore } from '../../services/ContainerService'
+import { SaveContainerFile, useContainerStore } from '../../services/ContainerService'
 
 const FileManager = () => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
@@ -28,21 +28,39 @@ const FileManager = () => {
 		setOpenedFiles(updatedFiles)
 	}
 
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	const handleSave = async () => {
 		if (activeFile === null) return
 		if (activeFile.content === null) return
 
-		const writable = await activeFile.handle.createWritable()
-		await writable.write(activeFile.content)
-		await writable.close()
+		if (activeFile.handle && activeFile.containerId === null) {
+			const writable = await activeFile.handle.createWritable()
+			await writable.write(activeFile.content)
+			await writable.close()
 
-		const updatedActiveFile = { ...activeFile, isSaved: true }
-		setActiveFile(updatedActiveFile)
+			const updatedActiveFile = { ...activeFile, isSaved: true }
+			setActiveFile(updatedActiveFile)
 
-		const updatedFiles = openedFiles.map((file) =>
-			file.path === activeFile.path ? updatedActiveFile : file,
-		)
-		setOpenedFiles(updatedFiles)
+			const updatedFiles = openedFiles.map((file) =>
+				file.path === activeFile.path ? updatedActiveFile : file,
+			)
+			setOpenedFiles(updatedFiles)
+		} else if (activeFile.containerId !== null){
+			console.log(activeFile)
+			await SaveContainerFile (
+				activeFile.containerId,
+				activeFile.name ,
+				activeFile.parentPath ??"",
+				activeFile.content,
+			)
+
+			const updatedActiveFile = { ...activeFile, isSaved: true }
+			const updatedFiles = openedFiles.map((file) =>
+				file.path === activeFile.path ? updatedActiveFile : file,
+			)
+			setOpenedFiles(updatedFiles)
+		}
+
 	}
 
 	const confirmCloseTab = (index: number) => {

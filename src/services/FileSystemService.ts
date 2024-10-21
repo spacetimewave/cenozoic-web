@@ -52,6 +52,7 @@ export const ReadRootDirectory = async (
 		content: null,
 		isSaved: true,
 		isOpen: false,
+		containerId: null,
 	}
 	// Read the directory and flatten the structure
 	files.push(rootDirectory)
@@ -79,6 +80,7 @@ const ReadDirectory = async (
 				content: null,
 				isSaved: true,
 				isOpen: false,
+				containerId: null,
 			}
 			flatStructure.push(directory)
 			await ReadDirectory(directory, flatStructure) // Recursive read for directories
@@ -92,6 +94,7 @@ const ReadDirectory = async (
 				content: null,
 				isSaved: true,
 				isOpen: false,
+				containerId: null,
 			}
 			flatStructure.push(file)
 		}
@@ -118,6 +121,7 @@ export const openFile = async (openFile: IFile) => {
 			content: await file.text(),
 			isSaved: true,
 			isOpen: true,
+			containerId: null,
 		}
 
 		setOpenedFiles([...openedFiles, newFile]) // Push the new file

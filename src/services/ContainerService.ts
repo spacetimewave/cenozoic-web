@@ -261,13 +261,11 @@ export const openFile = async (container_id: string, path: string) => {
 	const { token } = useCredentialStore.getState()
 
 	// Check if the file is already open
-	console.log(getContainerFiles(container_id))
 	const file = getContainerFiles(container_id).find(
 		(file) => file.path === path && file.kind === 'file',
 	) as IFile
 	const openedFile = openedFiles?.find((file) => file.path === path)
-	console.log(file)
-	console.log(openedFile)
+
 	if (!openedFile) {
 		const newFile = {
 			name: file.name,
@@ -282,6 +280,7 @@ export const openFile = async (container_id: string, path: string) => {
 			),
 			isSaved: true,
 			isOpen: true,
+			containerId: container_id,
 		}
 
 		setOpenedFiles([...openedFiles, newFile]) // Push the new file
@@ -317,10 +316,53 @@ export const GetContainerFileContent = async (
 		}
 
 		const data = await response.json()
-		console.log('FILE CONTENT', data)
 		return data
 	} catch (error) {
 		console.error('Error fetching container files:', error)
+		throw error
+	}
+}
+
+export const SaveContainerFile = async (
+	container_id: string,
+	name: string,
+	parent_path: string,
+	content: string,
+) => {
+	const url = `${import.meta.env.VITE_API_URL}/docker/save-file-content`
+	const { token } = useCredentialStore.getState()
+	try {
+		console.log(
+			JSON.stringify({
+				container_id: container_id,
+				name: name,
+				parent_path: parent_path,
+				content: content,
+			}),
+		)
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({
+				container_id: container_id,
+				name: name,
+				parent_path: parent_path,
+				content: content,
+			}),
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error starting container')
+		}
+
+		const data = await response.json()
+		return data
+	} catch (error) {
+		console.error('Error starting container:', error)
 		throw error
 	}
 }
