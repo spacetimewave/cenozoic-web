@@ -236,23 +236,24 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 											</svg>
 										</button>
 									</div>
-
-									<div className='flex justify-center mt-4'>
-										{container.status === 'running' && (
-											<button
-												onClick={() => toggleContainer(container.id)}
-												className='bg-gradient-to-r from-slate-400 to-slate-500 hover:from-slate-500 hover:to-slate-600 text-white py-1 px-3 rounded-full shadow-sm duration-300 ease-in-out transform text-xs'
-											>
-												{openContainerId === container.id
-													? 'Hide Options'
-													: 'Show Options'}
-											</button>
-										)}
-									</div>
-									{openContainerId === container.id && (
-										<div className='mt-3'>
-											<FileExplorer />
-										</div>
+									{container.status === 'running' && (
+										<>
+											<div className='flex justify-center mt-4'>
+												<button
+													onClick={() => toggleContainer(container.id)}
+													className='bg-gradient-to-r from-slate-400 to-slate-500 hover:from-slate-500 hover:to-slate-600 text-white py-1 px-3 rounded-full shadow-sm duration-300 ease-in-out transform text-xs'
+												>
+													{openContainerId === container.id
+														? 'Hide Options'
+														: 'Show Options'}
+												</button>
+											</div>
+											{openContainerId === container.id && (
+												<div className='mt-3'>
+													<FileExplorer />
+												</div>
+											)}
+										</>
 									)}
 								</div>
 							</li>
