@@ -115,7 +115,7 @@ const ContainerTerminal = ({ container_id, onCloseTerminal }: ContainerTerminalP
     }
 
 	return (
-		<div style={{ height: '267px', width: '100%', marginTop: 'auto', backgroundColor:'#1e1e1e'}}>
+		<div style={{ height: '267px', width: '100%', backgroundColor:'#1e1e1e', position: 'fixed', bottom: 0}}>
 			<div className='bg-slate-300 pl-2 p-1 pb-2 w-full mt-auto flex items-center'>
 				<button
 					onClick={killTerminal}

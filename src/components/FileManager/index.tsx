@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react'
 import CodeEditor from '../CodeEditor'
 import SaveModal from '../Modal'
 import { useFileEditorStore } from '../../services/FileSystemService'
-import ContainerTerminal from '../ContainerTerminal'
-import { SaveContainerFile, useContainerStore } from '../../services/ContainerService'
+import { SaveContainerFile } from '../../services/ContainerService'
 
 const FileManager = () => {
 	const { openedFiles, setOpenedFiles, activeFile, setActiveFile } =
 		useFileEditorStore()
-	const { containerTerminals, setContainerTerminals } = useContainerStore()
 	const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false)
 	const [closingTabIndex, setClosingTabIndex] = useState<number | null>(null)
 
@@ -45,12 +43,12 @@ const FileManager = () => {
 				file.path === activeFile.path ? updatedActiveFile : file,
 			)
 			setOpenedFiles(updatedFiles)
-		} else if (activeFile.containerId !== null){
+		} else if (activeFile.containerId !== null) {
 			console.log(activeFile)
-			await SaveContainerFile (
+			await SaveContainerFile(
 				activeFile.containerId,
-				activeFile.name ,
-				activeFile.parentPath ??"",
+				activeFile.name,
+				activeFile.parentPath ?? '',
 				activeFile.content,
 			)
 
@@ -60,7 +58,6 @@ const FileManager = () => {
 			)
 			setOpenedFiles(updatedFiles)
 		}
-
 	}
 
 	const confirmCloseTab = (index: number) => {
@@ -111,7 +108,7 @@ const FileManager = () => {
 	}, [openedFiles, activeFile, handleSave])
 
 	return (
-		<div className='flex flex-1 flex-col'>
+		<div className='flex flex-1 flex-col h-full'>
 			<div className='flex border-b border-gray-300'>
 				{openedFiles.map((file, index) => (
 					<div
@@ -142,18 +139,14 @@ const FileManager = () => {
 					</div>
 				))}
 			</div>
-			{openedFiles.length > 0 && activeFile && (
-				<CodeEditor
-					value={activeFile?.content ?? ''}
-					onChange={handleCodeChange}
-				/>
-			)}
-			<div className='mt-auto'>
-				{containerTerminals?.length === 0 ? null : (
-					<ContainerTerminal container_id={containerTerminals[0]} onCloseTerminal={()=>{setContainerTerminals([])}} />
+			<div className='flex-1 overflow-hidden'>
+				{openedFiles.length > 0 && activeFile && (
+					<CodeEditor
+						value={activeFile?.content ?? ''}
+						onChange={handleCodeChange}
+					/>
 				)}
 			</div>
-
 			{isSaveModalOpen && closingTabIndex !== null && (
 				<SaveModal
 					fileName={openedFiles[closingTabIndex]?.name}
