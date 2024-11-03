@@ -6,19 +6,17 @@ import ContainerTerminal from '../../components/ContainerTerminal'
 
 const App = () => {
 	const { containerTerminals, setContainerTerminals } = useContainerStore()
-	// const fileManagerRef = getPanelElement("filemanager");
-	// const terminalRef = getPanelElement("terminal");
 
 	return (
 		<div className='bg-zinc-700 flex h-screen w-screen'>
 			<PanelGroup direction='horizontal'>
-				<Panel defaultSize={20} minSize={10}>
+				<Panel defaultSize={18} minSize={18}>
 					<Sidebar />
 				</Panel>
 				<PanelResizeHandle />
 				<Panel>
 					<PanelGroup direction='vertical'>
-						<Panel id='filemanager'>
+						<Panel id='filemanager' >
 							<FileManager />
 						</Panel>
 						<PanelResizeHandle />

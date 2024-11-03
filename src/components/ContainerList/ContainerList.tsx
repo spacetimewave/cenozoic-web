@@ -141,7 +141,7 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 				<ul>
 					{containers.length > 0 ? (
 						containers.map((container) => (
-							<li key={container.id} className='mb-2'>
+							<li key={container.id} className='mb-2 w-56'>
 								<div className='bg-gray-700 p-3 rounded'>
 									<p className='text-xs'>
 										<strong>ID:</strong> {container.id}
