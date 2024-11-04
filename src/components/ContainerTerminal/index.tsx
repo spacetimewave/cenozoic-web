@@ -10,6 +10,7 @@ interface ContainerTerminalProps {
 }
 
 const ContainerTerminal = ({ container_id, onCloseTerminal }: ContainerTerminalProps) => {
+	const containerRef = useRef<HTMLDivElement | null>(null)
 	const xtermRef = useRef<HTMLDivElement | null>(null)
 	const [terminal, setTerminal] = useState<Terminal | null>(null)
 	const [socket, setSocket] = useState<WebSocket | null>(null)
@@ -84,6 +85,17 @@ const ContainerTerminal = ({ container_id, onCloseTerminal }: ContainerTerminalP
 				}
 			},
 		)
+
+		const resizeObserver = new ResizeObserver(() => {
+            if (xtermRef.current) {
+                fitAddon.fit()
+            }
+        })
+
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current)
+        }
+
 		return () => {
 			console.log('Cleanup')
 			if (terminal) {
@@ -115,7 +127,7 @@ const ContainerTerminal = ({ container_id, onCloseTerminal }: ContainerTerminalP
     }
 
 	return (
-		<div style={{ height: '267px', width: '100%', backgroundColor:'#1e1e1e', position: 'fixed', bottom: 0}}>
+		<div ref={containerRef}  style={{ height: '100%', width: '100%', backgroundColor:'#1e1e1e', paddingBottom: '50px'}}>
 			<div className='bg-slate-300 pl-2 p-1 pb-2 w-full mt-auto flex items-center'>
 				<button
 					onClick={killTerminal}
@@ -140,7 +152,7 @@ const ContainerTerminal = ({ container_id, onCloseTerminal }: ContainerTerminalP
 			</div>
 			<div
 				ref={xtermRef}
-				style={{ height: '225px', width: '100%', marginTop: 'auto', marginBlockStart: '10px', marginBlockEnd: '10px', overflowY: 'hidden'}}
+				style={{ height: '100%', width: '100%', marginBlockStart: '10px', marginBlockEnd: '10px' }}
 			></div>
 		</div>
 	)

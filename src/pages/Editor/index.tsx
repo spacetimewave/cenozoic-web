@@ -23,14 +23,12 @@ const App = () => {
 
 						{containerTerminals?.length === 0 ? null : (
 							<Panel id='terminal' defaultSize={25} minSize={25}>
-								<div className='mt-auto'>
 									<ContainerTerminal
 										container_id={containerTerminals[0]}
 										onCloseTerminal={() => {
 											setContainerTerminals([])
 										}}
 									/>
-								</div>
 							</Panel>
 						)}
 					</PanelGroup>
