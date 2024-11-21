@@ -1,18 +1,20 @@
 import { useState } from 'react'
+import { IFile, IFolder } from '../../interfaces/IFileSystem'
 import {
-	deleteFolder,
-	deleteFile,
-	renameItem,
+	Container,
+	getFolderChildren,
+	toggleFolder,
+	openFile,
+	moveItem,
 	createFolder,
 	createFile,
-	moveItem,
-} from '../../services/FileSystemService'
-import { IFile, IFolder } from '../../interfaces/IFileSystem'
-import {Container, getFolderChildren, toggleFolder, openFile} from '../../services/ContainerService'
-
+	deleteFolder,
+	deleteFile,
+	renameItem
+} from '../../services/ContainerService'
 
 interface ContainerFilesProps {
-	container: Container,
+	container: Container
 	token: string | null
 }
 
@@ -56,9 +58,9 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 			setNewItemType('file')
 			setAddingToPath(selectedItem.path) // Set the path to add the new item
 		} else if (action === 'delete-folder') {
-			deleteFolder(selectedItem.path)
+			deleteFolder(container.container_id, selectedItem.path)
 		} else if (action === 'delete-file') {
-			deleteFile(selectedItem.path)
+			deleteFile(container.container_id, selectedItem.path)
 		} else if (action === 'rename') {
 			setRenamingItem(selectedItem)
 			setRenameInput(selectedItem.name)
@@ -69,9 +71,12 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 	const handleNewItemBlur = async () => {
 		if (newItemName && addingToPath) {
 			if (newItemType === 'file') {
-				await createFile(addingToPath, newItemName)
+				await createFile(
+					container.container_id,
+					`${addingToPath}/${newItemName}`,
+				)
 			} else if (newItemType === 'directory') {
-				await createFolder(addingToPath, newItemName)
+				await createFolder(container.container_id, addingToPath, newItemName)
 			}
 			setNewItemName('') // Clear input after creation
 			setNewItemType(null)
@@ -81,7 +86,7 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 
 	const handleRenameBlur = async () => {
 		if (renamingItem) {
-			await renameItem(renamingItem.path, renameInput)
+			await renameItem(container.container_id, renamingItem.path, renameInput)
 			setRenamingItem(null)
 		}
 	}
@@ -106,7 +111,11 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 		e.preventDefault()
 		e.stopPropagation()
 		if (draggedItem && draggedItem.path !== targetFolder.path) {
-			await moveItem(draggedItem.path, targetFolder.path) // Move the dragged item
+			await moveItem(
+				container.container_id,
+				draggedItem.path,
+				targetFolder.path,
+			) // Move the dragged item
 			setDraggedItem(null) // Clear dragged item
 		}
 	}
@@ -126,7 +135,9 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 							>
 								<div
 									className='cursor-pointer'
-									onClick={() => toggleFolder(container.container_id, item.path)}
+									onClick={() =>
+										toggleFolder(container.container_id, item.path)
+									}
 									onContextMenu={(e) => handleContextMenu(e, item)}
 									draggable // Make folder draggable
 									onDragStart={(e) => handleDragStart(e, item)} // Handle drag start
@@ -165,7 +176,9 @@ const ContainerFileExplorer = ({ container, token }: ContainerFilesProps) => {
 						return (
 							<div
 								key={index}
-								onClick={async () => await openFile(container.container_id, item.path)}
+								onClick={async () =>
+									await openFile(container.container_id, item.path)
+								}
 								onContextMenu={(e) => handleContextMenu(e, item)}
 								className='cursor-pointer'
 								draggable // Make file draggable

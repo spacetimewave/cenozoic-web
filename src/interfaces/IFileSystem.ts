@@ -47,7 +47,7 @@ export interface IFile {
 	path: string
 	parentPath: string | null
 	kind: 'file'
-	handle: FileSystemFileHandle
+	handle: FileSystemFileHandle | null
 	content: string | null
 	isSaved: boolean
 	isOpen: boolean
@@ -59,7 +59,7 @@ export interface IFolder {
 	path: string
 	parentPath: string | null
 	kind: 'directory'
-	handle: FileSystemDirectoryHandle
+	handle: FileSystemDirectoryHandle | null
 	content: null
 	isSaved: boolean
 	isOpen: boolean

@@ -229,7 +229,9 @@ export const getContainerFiles = (
 	const containerFiles =
 		getContainerByContainerId(container_id)?.container_files
 
-	if (!containerFiles) return []
+	if (!containerFiles) {
+		return []
+	}
 	return containerFiles
 }
 
@@ -364,5 +366,259 @@ export const SaveContainerFile = async (
 	} catch (error) {
 		console.error('Error starting container:', error)
 		throw error
+	}
+}
+
+export const moveItem = async (
+	container_id: string,
+	source_path: string,
+	dest_path: string,
+) => {
+	const url = `${import.meta.env.VITE_API_URL}/docker/move-item`
+	const { token } = useCredentialStore.getState()
+	const data = {
+		container_id: container_id,
+		source_path: source_path,
+		destination_path: dest_path,
+	}
+
+	try {
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		})
+
+		if (!response.ok) {
+			const errorData = await response.json()
+			throw new Error(errorData.detail)
+		}
+
+		const container_files = getContainerFiles(container_id)
+		container_files.map((file) => {
+			if (file.path === source_path) {
+				file.path = dest_path + '/' + file.name
+				file.parentPath = dest_path
+			}
+		})
+
+		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+	} catch (error) {
+		console.error('Error moving item:', error)
+	}
+}
+
+export const renameItem = async (
+	container_id: string,
+	item_path: string,
+	new_name: string,
+) => {
+	const container_files = getContainerFiles(container_id)
+	const item = container_files.find((file) => file.path === item_path) as
+		| IFile
+		| IFolder
+
+	const url = `${import.meta.env.VITE_API_URL}/docker/move-item`
+	const { token } = useCredentialStore.getState()
+	const data = {
+		container_id: container_id,
+		source_path: item_path,
+		destination_path: item.parentPath + '/' + new_name,
+	}
+
+	try {
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		})
+
+		if (!response.ok) {
+			const errorData = await response.json()
+			throw new Error(errorData.detail)
+		}
+
+		const container_files = getContainerFiles(container_id)
+		container_files.map((file) => {
+			if (file.path === item_path) {
+				file.name = new_name
+				file.path = item.parentPath + '/' + new_name
+			}
+		})
+
+		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+	} catch (error) {
+		console.error('Error moving item:', error)
+	}
+}
+
+export const createFolder = async (
+	container_id: string,
+	parent_path: string,
+	folder_name: string,
+) => {
+	const url = `${import.meta.env.VITE_API_URL}/docker/create-folder`
+	const data = {
+		container_id: container_id,
+		folder_path: parent_path + '/' + folder_name,
+	}
+
+	try {
+		const { token } = useCredentialStore.getState()
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		})
+
+		if (!response.ok) {
+			const errorData = await response.json()
+			throw new Error(errorData.detail)
+		}
+
+		const result = await response.json()
+		console.log(result)
+
+		const container_files = getContainerFiles(container_id)
+		container_files.push({
+			name: folder_name,
+			path: parent_path + '/' + folder_name,
+			parentPath: parent_path,
+			kind: 'directory',
+			handle: null,
+			content: null,
+			isSaved: true,
+			isOpen: false,
+			containerId: container_id,
+		})
+
+		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+	} catch (error) {
+		console.error('Error creating folder:', error)
+	}
+}
+
+export const createFile = async (container_id: string, file_path: string) => {
+	try {
+		const url = `${import.meta.env.VITE_API_URL}/docker/create-file`
+		const data = {
+			container_id: container_id,
+			file_path: file_path,
+		}
+		const { token } = useCredentialStore.getState()
+
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		})
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
+
+		const container_files = getContainerFiles(container_id)
+		container_files.push({
+			name: file_path.substring(file_path.lastIndexOf('/') + 1),
+			path: file_path,
+			parentPath: file_path.substring(0, file_path.lastIndexOf('/')),
+			kind: 'file',
+			handle: null,
+			content: null,
+			isSaved: true,
+			isOpen: false,
+			containerId: container_id,
+		})
+
+		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+
+		const json = await response.json()
+		return json
+	} catch (error) {
+		console.error('Error creating file:', error)
+	}
+}
+
+export const deleteFile = async (container_id: string, path: string) => {
+	try {
+		const url = `${import.meta.env.VITE_API_URL}/docker/remove-path`
+		const data = {
+			container_id: container_id,
+			path: path,
+		}
+		const { token } = useCredentialStore.getState()
+
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		})
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
+		const json = await response.json()
+
+		let container_files = getContainerFiles(container_id)
+		container_files = container_files.filter((file) => file.path !== path)
+		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+
+		return json
+	} catch (error) {
+		console.error('Error deleting file:', error)
+	}
+}
+
+export const deleteFolder = async (container_id: string, path: string) => {
+	try {
+		const url = `${import.meta.env.VITE_API_URL}/docker/remove-path`
+		const data = {
+			container_id: container_id,
+			path: path,
+		}
+		const { token } = useCredentialStore.getState()
+
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(data),
+		})
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
+		const json = await response.json()
+
+		let container_files = getContainerFiles(container_id)
+		container_files = container_files.filter((file) => file.path !== path)
+		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+
+		return json
+	} catch (error) {
+		console.error('Error deleting file:', error)
 	}
 }
