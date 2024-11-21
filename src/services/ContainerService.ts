@@ -453,6 +453,15 @@ export const renameItem = async (
 			}
 		})
 
+		if (item.kind === 'directory') {
+			container_files.map((file) => {
+				if (file.parentPath === item_path) {
+					file.path = item.parentPath + '/' + new_name + '/' + file.name
+					file.parentPath = item.parentPath + '/' + new_name
+				}
+			})
+		}
+
 		const { setContainerFiles } = useContainerStore.getState()
 		setContainerFiles(container_id, container_files)
 	} catch (error) {
