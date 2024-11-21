@@ -216,6 +216,39 @@ export const GetContainerFiles = async (
 	}
 }
 
+export const GetContainerFolderContent = async (
+	container_id: string,
+	folder_path: string,
+	token: string,
+): Promise<(IFile | IFolder)[]> => {
+	const url = new URL(
+		`${import.meta.env.VITE_API_URL}/docker/filesystem/${container_id}/${btoa(
+			folder_path,
+		)}`,
+	)
+
+	try {
+		const response = await fetch(url.toString(), {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		})
+
+		if (!response.ok) {
+			const errorMessage = await response.json()
+			throw new Error(errorMessage.detail || 'Error fetching container files')
+		}
+
+		const data = await response.json()
+		return data.map((item: IFile | IFolder) => item)
+	} catch (error) {
+		console.error('Error fetching container files:', error)
+		throw error
+	}
+}
+
 export const getContainerByContainerId = (
 	container_id: string,
 ): Container | undefined => {
@@ -445,7 +478,7 @@ export const renameItem = async (
 			throw new Error(errorData.detail)
 		}
 
-		const container_files = getContainerFiles(container_id)
+		let container_files = getContainerFiles(container_id)
 		container_files.map((file) => {
 			if (file.path === item_path) {
 				file.name = new_name
@@ -454,13 +487,14 @@ export const renameItem = async (
 		})
 
 		if (item.kind === 'directory') {
-			container_files.map((file) => {
-				if (file.parentPath === item_path) {
-					file.path = item.parentPath + '/' + new_name + '/' + file.name
-					file.parentPath = item.parentPath + '/' + new_name
-				}
-			})
+			container_files = container_files.filter(
+				(file) => !file.parentPath?.startsWith(item_path),
+			)
 		}
+
+		container_files = container_files.concat(
+			await GetContainerFolderContent(container_id, item.path, token ?? ''),
+		)
 
 		const { setContainerFiles } = useContainerStore.getState()
 		setContainerFiles(container_id, container_files)
