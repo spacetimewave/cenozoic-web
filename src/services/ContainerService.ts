@@ -43,10 +43,11 @@ export const useContainerStore = create<IContainerStore>((set) => ({
 		})),
 }))
 
-export const CreateNewContainer = async (token: string) => {
-	const url = `${import.meta.env.VITE_API_URL}/docker/create-container`
-
+// Container Service: HTTP Request to create new container
+export const _CreateNewContainer = async (token: string) => {
 	try {
+		const url = `${import.meta.env.VITE_API_URL}/docker/create-container`
+
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -74,12 +75,20 @@ export const CreateNewContainer = async (token: string) => {
 	}
 }
 
-export const GetUserContainers = async (token: string) => {
-	const url = new URL(`${import.meta.env.VITE_API_URL}/docker/user-containers`)
+// Container Store: Create new container
+export const CreateNewContainer = async (token: string) => {
+	const { containers, setContainers } = useContainerStore.getState()
+	const newContainer = await _CreateNewContainer(token ?? '')
+	setContainers([...containers, newContainer])
+}
 
+// Container Service: HTTP Request to get container
+export const _GetUserContainers = async (token: string) => {
 	try {
-		const response = await fetch(url.toString(), {
-			method: 'GET', // This should be a POST request since you're sending data
+		const url = `${import.meta.env.VITE_API_URL}/docker/user-containers`
+
+		const response = await fetch(url, {
+			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`,
@@ -87,8 +96,7 @@ export const GetUserContainers = async (token: string) => {
 		})
 
 		if (!response.ok) {
-			const errorMessage = await response.json()
-			throw new Error(errorMessage.detail || 'Error fetching containers')
+			throw new Error(await response.json())
 		}
 
 		const data = await response.json()
@@ -99,12 +107,19 @@ export const GetUserContainers = async (token: string) => {
 	}
 }
 
-export const StartContainer = async (container_id: string, token: string) => {
-	const url = `${
-		import.meta.env.VITE_API_URL
-	}/docker/start-container/${container_id}`
+// Container Store: Update user containers
+export const UpdateUserContainers = async (token: string) => {
+	const { setContainers } = useContainerStore.getState()
+	setContainers(await _GetUserContainers(token ?? ''))
+}
 
+// Container Service: HTTP Request to start a container
+export const _StartContainer = async (container_id: string, token: string) => {
 	try {
+		const url = `${
+			import.meta.env.VITE_API_URL
+		}/docker/start-container/${container_id}`
+
 		const response = await fetch(url, {
 			method: 'PUT',
 			headers: {
@@ -114,8 +129,7 @@ export const StartContainer = async (container_id: string, token: string) => {
 		})
 
 		if (!response.ok) {
-			const errorMessage = await response.json()
-			throw new Error(errorMessage.detail || 'Error starting container')
+			throw new Error(await response.json())
 		}
 
 		const data = await response.json()
@@ -124,6 +138,14 @@ export const StartContainer = async (container_id: string, token: string) => {
 		console.error('Error starting container:', error)
 		throw error
 	}
+}
+
+// Container Store: Start a container
+export const StartContainer = async (container_id: string, token: string) => {
+	// Start container HTTP request
+	await _StartContainer(container_id, token ?? '')
+	// Update container store
+	UpdateUserContainers(token ?? '')
 }
 
 // Container Service: HTTP Request to stop a container
@@ -158,17 +180,17 @@ export const StopContainer = async (container_id: string, token: string) => {
 	// Stop container HTTP request
 	await _StopContainer(container_id, token ?? '')
 	// Update container store
-	const { setContainers } = useContainerStore.getState()
-	setContainers(await GetUserContainers(token ?? ''))
+	await UpdateUserContainers(token ?? '')
 }
 
-export const DeleteContainer = async (container_id: string, token: string) => {
-	const url = new URL(
-		`${import.meta.env.VITE_API_URL}/docker/delete-container/${container_id}`,
-	)
-
+// Container Service: HTTP Request to remove a container
+export const _DeleteContainer = async (container_id: string, token: string) => {
 	try {
-		const response = await fetch(url.toString(), {
+		const url = `${
+			import.meta.env.VITE_API_URL
+		}/docker/delete-container/${container_id}`
+
+		const response = await fetch(url, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
@@ -189,6 +211,16 @@ export const DeleteContainer = async (container_id: string, token: string) => {
 	}
 }
 
+// Container Store: Remove a container
+export const DeleteContainer = async (container_id: string, token: string) => {
+	const { containers, setContainers } = useContainerStore.getState()
+	await _DeleteContainer(container_id, token ?? '')
+	setContainers(
+		containers.filter((container) => container.container_id !== container_id),
+	)
+}
+
+// Container Store: Open container terminal
 export const OpenTerminal = async (container_id: string) => {
 	const { containerTerminals, setContainerTerminals } =
 		useContainerStore.getState()

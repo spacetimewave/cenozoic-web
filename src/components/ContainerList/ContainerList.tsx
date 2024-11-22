@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import {
 	CreateNewContainer,
 	StartContainer,
-	GetUserContainers,
+	
 	DeleteContainer,
 	useContainerStore,
 	StopContainer,
 	OpenTerminal,
 	GetContainerFiles,
+	UpdateUserContainers,
 } from '../../services/ContainerService'
 import ContainerFileExplorer from '../ContainerFileExplorer'
 
@@ -45,7 +46,7 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 	useEffect(() => {
 		const fetchContainers = async () => {
 			try {
-				setContainers(await GetUserContainers(token ?? ''))
+				UpdateUserContainers(token ?? '')
 			} catch (error) {
 				console.error('Error fetching containers:', error)
 			}
@@ -60,9 +61,7 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 				setIsMaxContainersModalVisible(true)
 				return
 			}
-			const newContainer = await CreateNewContainer(token ?? '')
-			console.log(newContainer)
-			setContainers([...containers, newContainer])
+			await CreateNewContainer(token ?? '')
 		} catch (error) {
 			console.error('Error starting new container:', error)
 		}
@@ -83,7 +82,6 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 				return
 			}
 			await StartContainer(containerId, token ?? '')
-			setContainers(await GetUserContainers(token ?? ''))
 		} catch (error) {
 			console.error('Error starting new container:', error)
 		}
@@ -92,11 +90,6 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 	const handleDeleteContainer = async (containerId: string) => {
 		try {
 			await DeleteContainer(containerId, token ?? '')
-			setContainers(
-				containers.filter(
-					(container) => container.container_id !== containerId,
-				),
-			)
 		} catch (error) {
 			console.error('Error deleting container:', error)
 		}
