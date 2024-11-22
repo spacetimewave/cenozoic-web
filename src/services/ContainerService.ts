@@ -445,40 +445,60 @@ export const moveItem = async (
 	}
 }
 
-export const renameItem = async (
+// Container Service: HTTP Request to rename an item (folder or file) in a container
+export const _renameItem = async (
 	container_id: string,
-	item_path: string,
+	item: IFile | IFolder,
 	new_name: string,
+	token: string,
 ) => {
-	const container_files = getContainerFiles(container_id)
-	const item = container_files.find((file) => file.path === item_path) as
-		| IFile
-		| IFolder
-
-	const url = `${import.meta.env.VITE_API_URL}/docker/move-item`
-	const { token } = useCredentialStore.getState()
-	const data = {
-		container_id: container_id,
-		source_path: item_path,
-		destination_path: item.parentPath + '/' + new_name,
-	}
-
 	try {
+		const url = `${import.meta.env.VITE_API_URL}/docker/move-item`
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`,
 			},
-			body: JSON.stringify(data),
+			body: JSON.stringify({
+				container_id: container_id,
+				source_path: item.path,
+				destination_path: item.parentPath + '/' + new_name,
+			}),
 		})
 
 		if (!response.ok) {
-			const errorData = await response.json()
-			throw new Error(errorData.detail)
+			throw new Error(await response.json())
 		}
 
+		return true
+	} catch (error) {
+		console.error('HTTP Error | Rename Item Error: ', error)
+		return true
+	}
+}
+
+// Container Store: Rename an item (folder or file) in a container
+export const renameItem = async (
+	container_id: string,
+	item_path: string,
+	new_name: string,
+) => {
+	try {
 		let container_files = getContainerFiles(container_id)
+		const item = container_files.find((file) => file.path === item_path)
+		if (!item) {
+			throw new Error('Item not found')
+		}
+
+		// Rename item container
+		const { token } = useCredentialStore.getState()
+		const result = await _renameItem(container_id, item, new_name, token ?? '')
+		if (!result) {
+			throw new Error('Rename item failed')
+		}
+
+		// Rename item locally
 		container_files.map((file) => {
 			if (file.path === item_path) {
 				file.name = new_name
@@ -486,20 +506,23 @@ export const renameItem = async (
 			}
 		})
 
+		// Remove outdated children elements
 		if (item.kind === 'directory') {
 			container_files = container_files.filter(
 				(file) => !file.parentPath?.startsWith(item_path),
 			)
 		}
 
+		// Add updated children elements
 		container_files = container_files.concat(
 			await GetContainerFolderContent(container_id, item.path, token ?? ''),
 		)
 
+		// Update container files store
 		const { setContainerFiles } = useContainerStore.getState()
 		setContainerFiles(container_id, container_files)
 	} catch (error) {
-		console.error('Error moving item:', error)
+		console.error('Error | Rename Item Error: ', error)
 	}
 }
 
