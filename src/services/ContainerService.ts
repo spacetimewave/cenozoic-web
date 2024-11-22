@@ -126,13 +126,14 @@ export const StartContainer = async (container_id: string, token: string) => {
 	}
 }
 
-export const StopContainer = async (container_id: string, token: string) => {
-	const url = new URL(
-		`${import.meta.env.VITE_API_URL}/docker/stop-container/${container_id}`,
-	)
-
+// Container Service: HTTP Request to stop a container
+export const _StopContainer = async (container_id: string, token: string) => {
 	try {
-		const response = await fetch(url.toString(), {
+		const url = `${
+			import.meta.env.VITE_API_URL
+		}/docker/stop-container/${container_id}`
+
+		const response = await fetch(url, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
@@ -141,8 +142,7 @@ export const StopContainer = async (container_id: string, token: string) => {
 		})
 
 		if (!response.ok) {
-			const errorMessage = await response.json()
-			throw new Error(errorMessage.detail || 'Error fetching containers')
+			throw new Error(await response.json())
 		}
 
 		const data = await response.json()
@@ -151,6 +151,15 @@ export const StopContainer = async (container_id: string, token: string) => {
 		console.error('Error fetching user containers:', error)
 		throw error
 	}
+}
+
+// Container Store: Stop a container
+export const StopContainer = async (container_id: string, token: string) => {
+	// Stop container HTTP request
+	await _StopContainer(container_id, token ?? '')
+	// Update container store
+	const { setContainers } = useContainerStore.getState()
+	setContainers(await GetUserContainers(token ?? ''))
 }
 
 export const DeleteContainer = async (container_id: string, token: string) => {

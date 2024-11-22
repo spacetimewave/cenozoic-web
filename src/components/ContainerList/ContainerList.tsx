@@ -71,7 +71,6 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 	const handleStopContainer = async (containerId: string) => {
 		try {
 			await StopContainer(containerId, token ?? '')
-			setContainers(await GetUserContainers(token ?? ''))
 		} catch (error) {
 			console.error('Error starting new container:', error)
 		}
