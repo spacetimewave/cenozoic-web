@@ -227,7 +227,8 @@ export const OpenTerminal = async (container_id: string) => {
 	setContainerTerminals([...containerTerminals, container_id])
 }
 
-export const GetContainerFiles = async (
+// Container Service: HTTP Request to get user containers
+export const _GetContainerFiles = async (
 	container_id: string,
 	token: string,
 ): Promise<(IFile | IFolder)[]> => {
@@ -257,7 +258,8 @@ export const GetContainerFiles = async (
 	}
 }
 
-export const GetContainerFolderContent = async (
+// Container Service: HTTP Request to get user containers
+export const _GetContainerFolderContent = async (
 	container_id: string,
 	folder_path: string,
 	token: string,
@@ -290,6 +292,7 @@ export const GetContainerFolderContent = async (
 	}
 }
 
+// Container Store: Get container by container id
 export const getContainerByContainerId = (
 	container_id: string,
 ): Container | undefined => {
@@ -297,6 +300,7 @@ export const getContainerByContainerId = (
 	return containers.find((container) => container.container_id === container_id)
 }
 
+// Container Store: Get container files by container id
 export const getContainerFiles = (
 	container_id: string,
 ): (IFile | IFolder)[] => {
@@ -309,6 +313,7 @@ export const getContainerFiles = (
 	return containerFiles
 }
 
+// Container Store: Get container files by container id and container folder
 export const getFolderChildren = (
 	container_id: string,
 	parentPath: string | null,
@@ -317,6 +322,7 @@ export const getFolderChildren = (
 	return containerFiles.filter((file) => file.parentPath === parentPath)
 }
 
+// Container Store: Toggle container folder
 export const toggleFolder = (container_id: string, path: string) => {
 	const { setContainerFiles } = useContainerStore.getState()
 	const containerFiles = getContainerFiles(container_id)
@@ -331,6 +337,7 @@ export const toggleFolder = (container_id: string, path: string) => {
 	setContainerFiles(container_id, updatedFiles)
 }
 
+// Container Store: Open container file
 export const openFile = async (container_id: string, path: string) => {
 	const { openedFiles, setOpenedFiles, setActiveFile } =
 		useFileEditorStore.getState()
@@ -349,7 +356,7 @@ export const openFile = async (container_id: string, path: string) => {
 			parentPath: file.parentPath,
 			kind: file.kind,
 			handle: file.handle,
-			content: await GetContainerFileContent(
+			content: await _GetContainerFileContent(
 				container_id,
 				file.path,
 				token ?? '',
@@ -366,7 +373,8 @@ export const openFile = async (container_id: string, path: string) => {
 	}
 }
 
-export const GetContainerFileContent = async (
+// Container Service: HTTP Request to get container file content
+export const _GetContainerFileContent = async (
 	container_id: string,
 	file_path: string,
 	token: string,
@@ -399,23 +407,16 @@ export const GetContainerFileContent = async (
 	}
 }
 
-export const SaveContainerFile = async (
+// Container Service: HTTP Request to save container file content
+export const _SaveContainerFile = async (
 	container_id: string,
 	name: string,
 	parent_path: string,
 	content: string,
+	token: string,
 ) => {
 	const url = `${import.meta.env.VITE_API_URL}/docker/save-file-content`
-	const { token } = useCredentialStore.getState()
 	try {
-		console.log(
-			JSON.stringify({
-				container_id: container_id,
-				name: name,
-				parent_path: parent_path,
-				content: content,
-			}),
-		)
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -443,20 +444,31 @@ export const SaveContainerFile = async (
 	}
 }
 
-export const moveItem = async (
+// Container Store: Open container file
+export const SaveContainerFile = async (
+	container_id: string,
+	name: string,
+	parent_path: string,
+	content: string,
+) => {
+	const { token } = useCredentialStore.getState()
+	_SaveContainerFile(container_id, name, parent_path, content, token ?? '')
+}
+
+// Container Service: HTTP Request to move an item (folder or file) in a container
+export const _moveItem = async (
 	container_id: string,
 	source_path: string,
 	dest_path: string,
+	token: string,
 ) => {
-	const url = `${import.meta.env.VITE_API_URL}/docker/move-item`
-	const { token } = useCredentialStore.getState()
-	const data = {
-		container_id: container_id,
-		source_path: source_path,
-		destination_path: dest_path,
-	}
-
 	try {
+		const url = `${import.meta.env.VITE_API_URL}/docker/move-item`
+		const data = {
+			container_id: container_id,
+			source_path: source_path,
+			destination_path: dest_path,
+		}
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -480,6 +492,31 @@ export const moveItem = async (
 		})
 
 		const { setContainerFiles } = useContainerStore.getState()
+		setContainerFiles(container_id, container_files)
+	} catch {
+		throw new Error('Move Item Error')
+	}
+}
+
+// Container Store: Move item (folder or file) in a container
+export const moveItem = async (
+	container_id: string,
+	source_path: string,
+	dest_path: string,
+) => {
+	try {
+		const { token } = useCredentialStore.getState()
+		const { setContainerFiles } = useContainerStore.getState()
+
+		await _moveItem(container_id, source_path, dest_path, token ?? '')
+		const container_files = getContainerFiles(container_id)
+		container_files.map((file) => {
+			if (file.path === source_path) {
+				file.path = dest_path + '/' + file.name
+				file.parentPath = dest_path
+			}
+		})
+
 		setContainerFiles(container_id, container_files)
 	} catch (error) {
 		console.error('Error moving item:', error)
@@ -513,9 +550,8 @@ export const _renameItem = async (
 		}
 
 		return true
-	} catch (error) {
-		console.error('HTTP Error | Rename Item Error: ', error)
-		return true
+	} catch {
+		throw new Error('Create file error')
 	}
 }
 
@@ -556,7 +592,7 @@ export const renameItem = async (
 
 		// Add updated children elements
 		container_files = container_files.concat(
-			await GetContainerFolderContent(container_id, item.path, token ?? ''),
+			await _GetContainerFolderContent(container_id, item.path, token ?? ''),
 		)
 
 		// Update container files store
@@ -567,19 +603,19 @@ export const renameItem = async (
 	}
 }
 
-export const createFolder = async (
+// Container Service: HTTP Request to create a folder in a container
+export const _createFolder = async (
 	container_id: string,
 	parent_path: string,
 	folder_name: string,
+	token: string,
 ) => {
-	const url = `${import.meta.env.VITE_API_URL}/docker/create-folder`
-	const data = {
-		container_id: container_id,
-		folder_path: parent_path + '/' + folder_name,
-	}
-
 	try {
-		const { token } = useCredentialStore.getState()
+		const url = `${import.meta.env.VITE_API_URL}/docker/create-folder`
+		const data = {
+			container_id: container_id,
+			folder_path: parent_path + '/' + folder_name,
+		}
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -594,8 +630,21 @@ export const createFolder = async (
 			throw new Error(errorData.detail)
 		}
 
-		const result = await response.json()
-		console.log(result)
+		await response.json()
+	} catch {
+		throw new Error('Create Folder Error')
+	}
+}
+
+// Container Store: Create a folder in a container
+export const createFolder = async (
+	container_id: string,
+	parent_path: string,
+	folder_name: string,
+) => {
+	try {
+		const { token } = useCredentialStore.getState()
+		await _createFolder(container_id, parent_path, folder_name, token ?? '')
 
 		const container_files = getContainerFiles(container_id)
 		container_files.push({
@@ -617,15 +666,18 @@ export const createFolder = async (
 	}
 }
 
-export const createFile = async (container_id: string, file_path: string) => {
+// Container Service: HTTP Request to rename an item (folder or file) in a container
+export const _createFile = async (
+	container_id: string,
+	file_path: string,
+	token: string,
+) => {
 	try {
 		const url = `${import.meta.env.VITE_API_URL}/docker/create-file`
 		const data = {
 			container_id: container_id,
 			file_path: file_path,
 		}
-		const { token } = useCredentialStore.getState()
-
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -638,6 +690,19 @@ export const createFile = async (container_id: string, file_path: string) => {
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`)
 		}
+
+		const json = await response.json()
+		return json
+	} catch {
+		throw new Error('Create file error')
+	}
+}
+
+// Container Store: Create a file in a container
+export const createFile = async (container_id: string, file_path: string) => {
+	try {
+		const { token } = useCredentialStore.getState()
+		const response = await _createFile(container_id, file_path, token ?? '')
 
 		const container_files = getContainerFiles(container_id)
 		container_files.push({
@@ -655,22 +720,24 @@ export const createFile = async (container_id: string, file_path: string) => {
 		const { setContainerFiles } = useContainerStore.getState()
 		setContainerFiles(container_id, container_files)
 
-		const json = await response.json()
-		return json
+		return response
 	} catch (error) {
 		console.error('Error creating file:', error)
 	}
 }
 
-export const deleteFile = async (container_id: string, path: string) => {
+// Container Service: HTTP Request to delete a file in a container
+export const _deleteFile = async (
+	container_id: string,
+	path: string,
+	token: string,
+) => {
 	try {
 		const url = `${import.meta.env.VITE_API_URL}/docker/remove-path`
 		const data = {
 			container_id: container_id,
 			path: path,
 		}
-		const { token } = useCredentialStore.getState()
-
 		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
@@ -685,25 +752,41 @@ export const deleteFile = async (container_id: string, path: string) => {
 		}
 		const json = await response.json()
 
+		return json
+	} catch {
+		throw new Error('Delete file error')
+	}
+}
+
+// Container Store: Delete a folder in a container
+export const deleteFile = async (container_id: string, path: string) => {
+	try {
+		const { token } = useCredentialStore.getState()
+		const response = await _deleteFile(container_id, path, token ?? '')
+
 		let container_files = getContainerFiles(container_id)
 		container_files = container_files.filter((file) => file.path !== path)
 		const { setContainerFiles } = useContainerStore.getState()
 		setContainerFiles(container_id, container_files)
 
-		return json
+		return response
 	} catch (error) {
 		console.error('Error deleting file:', error)
 	}
 }
 
-export const deleteFolder = async (container_id: string, path: string) => {
+// Container Service: HTTP Request to delete a folder in a container
+export const _deleteFolder = async (
+	container_id: string,
+	path: string,
+	token: string,
+) => {
 	try {
 		const url = `${import.meta.env.VITE_API_URL}/docker/remove-path`
 		const data = {
 			container_id: container_id,
 			path: path,
 		}
-		const { token } = useCredentialStore.getState()
 
 		const response = await fetch(url, {
 			method: 'POST',
@@ -719,12 +802,25 @@ export const deleteFolder = async (container_id: string, path: string) => {
 		}
 		const json = await response.json()
 
+		return json
+	} catch {
+		throw new Error('Delete folder error')
+	}
+}
+
+// Container Store: Delete a file in a container
+export const deleteFolder = async (container_id: string, path: string) => {
+	try {
+		const { token } = useCredentialStore.getState()
+
+		const response = await _deleteFolder(container_id, path, token ?? '')
+
 		let container_files = getContainerFiles(container_id)
 		container_files = container_files.filter((file) => file.path !== path)
 		const { setContainerFiles } = useContainerStore.getState()
 		setContainerFiles(container_id, container_files)
 
-		return json
+		return response
 	} catch (error) {
 		console.error('Error deleting file:', error)
 	}
