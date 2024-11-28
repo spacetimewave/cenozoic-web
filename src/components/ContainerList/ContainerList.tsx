@@ -7,9 +7,9 @@ import {
 	useContainerStore,
 	StopContainer,
 	OpenTerminal,
-	_GetContainerFiles,
+	GetContainerFiles,
 	UpdateUserContainers,
-} from '../../services/ContainerService'
+} from '../../stores/ContainerStore'
 import ContainerFileExplorer from '../ContainerFileExplorer'
 
 interface ContainerManagerProps {
@@ -110,7 +110,7 @@ const ContainerList = ({ token }: ContainerManagerProps) => {
 		if(openedContainerDetails.includes(containerId)) { 
 			setOpenedContainerDetails(openedContainerDetails.filter((id) => id !== containerId))
 		} else {
-			const containerFiles = await _GetContainerFiles(containerId, token ?? '')
+			const containerFiles = await GetContainerFiles(containerId, token ?? '')
 			setContainerFiles(containerId, containerFiles)
 			setOpenedContainerDetails([...openedContainerDetails, containerId])
 		}

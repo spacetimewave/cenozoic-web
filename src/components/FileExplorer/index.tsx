@@ -12,7 +12,7 @@ import {
 	createFile,
 	moveItem,
 } from '../../services/FileSystemService'
-import { IFile, IFolder } from '../../interfaces/IFileSystem'
+import { IFile, IFolder } from '../../models/IFileSystem'
 
 const FileExplorer = () => {
 	const { projectFiles } = useFileSystemStore()

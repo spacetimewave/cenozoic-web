@@ -1,7 +1,7 @@
 import Sidebar from '../../components/Sidebar'
 import FileManager from '../../components/FileManager'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
-import { useContainerStore } from '../../services/ContainerService'
+import { useContainerStore } from '../../stores/ContainerStore'
 import ContainerTerminal from '../../components/ContainerTerminal'
 
 const App = () => {

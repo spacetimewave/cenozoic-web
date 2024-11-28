@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { useContainerStore } from './ContainerService'
+import { useContainerStore } from '../stores/ContainerStore'
 import { persist } from 'zustand/middleware'
 
 export const useCredentialStore = create(

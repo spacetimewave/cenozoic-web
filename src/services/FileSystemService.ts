@@ -7,7 +7,7 @@ import {
 	FileSystemDirectoryHandle,
 	FileSystemFileHandle,
 	IFileEditorStore,
-} from '../interfaces/IFileSystem'
+} from '../models/IFileSystem'
 
 export const useFileSystemStore = create<IFileSystemStore>((set) => ({
 	projectFiles: [], // flat list of project files and directories

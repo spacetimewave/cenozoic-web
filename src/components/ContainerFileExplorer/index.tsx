@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { IFile, IFolder } from '../../interfaces/IFileSystem'
+import { IFile, IFolder } from '../../models/IFileSystem'
+import { Container } from '../../models/IContainer'
+
 import {
-	Container,
 	getFolderChildren,
 	toggleFolder,
 	openFile,
@@ -11,7 +12,7 @@ import {
 	deleteFolder,
 	deleteFile,
 	renameItem
-} from '../../services/ContainerService'
+} from '../../stores/ContainerStore'
 
 interface ContainerFilesProps {
 	container: Container
