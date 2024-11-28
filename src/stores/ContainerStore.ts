@@ -194,6 +194,12 @@ export const moveItem = async (
 			if (file.path === source_path) {
 				file.path = dest_path + '/' + file.name
 				file.parentPath = dest_path
+			} else if (file.path.startsWith(source_path)) {
+				const parentName = source_path.split('/').pop()
+				const relativePath =
+					'/' + parentName + file.path.replace(source_path, '')
+				file.path = dest_path + relativePath
+				file.parentPath = file.path.replace('/' + file.name, '')
 			}
 		})
 
