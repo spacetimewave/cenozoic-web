@@ -44,7 +44,6 @@ const FileManager = () => {
 			)
 			setOpenedFiles(updatedFiles)
 		} else if (activeFile.containerId !== null) {
-			console.log(activeFile)
 			await SaveContainerFile(
 				activeFile.containerId,
 				activeFile.name,
@@ -56,6 +55,7 @@ const FileManager = () => {
 			const updatedFiles = openedFiles.map((file) =>
 				file.path === activeFile.path ? updatedActiveFile : file,
 			)
+			setActiveFile(updatedActiveFile)
 			setOpenedFiles(updatedFiles)
 		}
 	}
