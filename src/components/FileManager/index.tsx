@@ -142,6 +142,7 @@ const FileManager = () => {
 			<div className='flex-1 overflow-hidden'>
 				{openedFiles.length > 0 && activeFile && (
 					<CodeEditor
+						filename={activeFile.name}
 						value={activeFile?.content ?? ''}
 						onChange={handleCodeChange}
 					/>
