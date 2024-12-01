@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import MonacoEditor from 'react-monaco-editor';
+import MonacoEditor from '@monaco-editor/react';
 
 interface Props {
     value: string;
@@ -38,12 +38,13 @@ const CodeEditor = ({ value, onChange }: Props) => {
                 language='javascript'
                 theme='vs-dark'
                 value={value}
-                onChange={onChange}
+                onChange={(newValue) => onChange(newValue ?? '')}
                 height={editorHeight}
                 options={{
                     lineHeight: 19,
                     selectOnLineNumbers: true,
                     scrollBeyondLastLine: false,
+                    colorDecorators: true,
                 }}
             />
         </div>
