@@ -109,15 +109,15 @@ const FileManager = () => {
 
 	return (
 		<div className='flex flex-1 flex-col h-full'>
-			<div className='flex border-b border-gray-300'>
+			<div className='flex border-b border-gray-300 gap-[2px]'>
 				{openedFiles.map((file, index) => (
 					<div
 						key={index}
 						onClick={() => setActiveFile(file)}
 						className={`p-2 cursor-pointer ${
 							activeFile === file
-								? 'bg-gray-100 border-b-4 border-blue-600'
-								: 'bg-gray-300'
+								? 'bg-gray-100 hover:bg-gray-200 border-b-4 border-blue-600'
+								: 'bg-gray-300 hover:bg-gray-200'
 						} relative`}
 					>
 						{!file.isSaved ? (
